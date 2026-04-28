@@ -18,4 +18,24 @@ public class ApiResponse<T> {
     private String message;
     private String path;
     private T data;
+
+    public static <T> ApiResponse<T> success(T data, String message) {
+        return ApiResponse.<T>builder()
+                .timestamp(LocalDateTime.now())
+                .status(200)
+                .success(true)
+                .message(message)
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(String message, String path) {
+        return ApiResponse.<T>builder()
+                .timestamp(LocalDateTime.now())
+                .status(500)
+                .success(false)
+                .message(message)
+                .path(path)
+                .build();
+    }
 }

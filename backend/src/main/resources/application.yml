@@ -32,3 +32,10 @@ springdoc:
   swagger-ui:
     url: /v3/api-docs
     config-url: /v3/api-docs/swagger-config
+# Import API Configurations
+import:
+  api:
+    fakestore:
+      url: https://fakestoreapi.com
+    dummyjson:
+      url: https://dummyjson.com

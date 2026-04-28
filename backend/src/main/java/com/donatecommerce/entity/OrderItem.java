@@ -25,4 +25,6 @@ public class OrderItem {
 
     private BigDecimal unitPrice;
     private BigDecimal subtotal;
+
+    private Boolean isDonation = false;
 }

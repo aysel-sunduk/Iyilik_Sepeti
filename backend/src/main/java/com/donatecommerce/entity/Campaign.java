@@ -1,44 +1,44 @@
 package com.donatecommerce.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "campaigns")
-@Getter @Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Campaign {
-
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(nullable = false)
     private String title;
-    private String subtitle;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
-
-    private BigDecimal targetAmount;
-    private BigDecimal collectedAmount;
-
-    private String campaignType;
+    
     private String imageUrl;
 
-    private LocalDate deadline;
-    private String location;
+    @Column(nullable = false)
+    private BigDecimal targetAmount;
 
-    @ManyToOne
-    @JoinColumn(name = "created_by")
-    private User createdBy;
+    @Column(nullable = false)
+    private BigDecimal raisedAmount;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt;
+    private String unit; // adet, kg, TL vb.
+    
+    private Integer targetCount;
+    private Integer raisedCount;
 
-    private Boolean isActive;
-    private Boolean isDeleted;
+    private boolean isActive;
+
+    private LocalDateTime createdAt;
 }

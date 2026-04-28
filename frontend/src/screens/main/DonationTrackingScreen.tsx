@@ -59,16 +59,48 @@ export default function DonationTrackingScreen() {
     }
   };
 
-  const openProofModal = (imageUrl: string) => {
-    setSelectedProof(imageUrl);
-    setModalVisible(true);
+  const renderTimeline = (status: string) => {
+    const steps = [
+      { id: 'pending', label: 'Hazırlanıyor', icon: '📦' },
+      { id: 'shipping', label: 'Yolda', icon: '🚚' },
+      { id: 'delivered', label: 'Teslim Edildi', icon: '🏠' },
+    ];
+    
+    const currentIndex = steps.findIndex(s => s.id === status);
+
+    return (
+      <View style={styles.timelineContainer}>
+        {steps.map((step, index) => (
+          <View key={step.id} style={styles.timelineStep}>
+            <View style={styles.dotContainer}>
+              <View style={[
+                styles.dot, 
+                { backgroundColor: index <= currentIndex ? theme.accent : '#D1D5DB' }
+              ]} />
+              {index < steps.length - 1 && (
+                <View style={[
+                  styles.line, 
+                  { backgroundColor: index < currentIndex ? theme.accent : '#D1D5DB' }
+                ]} />
+              )}
+            </View>
+            <Text style={[
+              styles.stepLabel, 
+              { color: index <= currentIndex ? theme.text1 : theme.text3, fontWeight: index === currentIndex ? 'bold' : 'normal' }
+            ]}>
+              {step.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { backgroundColor: theme.accent }]}>
         <Text style={styles.headerTitle}>🎁 Bağışlarım</Text>
-        <Text style={styles.headerSub}>Bağışlarının nereye gittiğini takip et!</Text>
+        <Text style={styles.headerSub}>İyilik yolculuğunu buradan takip et!</Text>
       </View>
 
       <FlatList
@@ -81,16 +113,14 @@ export default function DonationTrackingScreen() {
               <Text style={[styles.productName, { color: theme.text1 }]}>
                 {item.productName} x{item.quantity}
               </Text>
-              <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
-                {getStatusText(item.status)}
-              </Text>
+              <Text style={[styles.date, { color: theme.text4 }]}>{item.date}</Text>
             </View>
 
-            <Text style={[styles.date, { color: theme.text4 }]}>📅 {item.date}</Text>
+            {renderTimeline(item.status)}
 
             {item.donationType === 'friend' && item.friendName && (
-              <View style={[styles.friendBadge, { backgroundColor: theme.accentLight }]}>
-                <Text style={[styles.friendText, { color: theme.accentDark }]}>
+              <View style={[styles.friendBadge, { backgroundColor: theme.accent + '10' }]}>
+                <Text style={[styles.friendText, { color: theme.accent }]}>
                   🎁 {item.friendName} adına bağışlandı
                 </Text>
                 {item.message && (
@@ -99,20 +129,23 @@ export default function DonationTrackingScreen() {
               </View>
             )}
 
-            {item.proofImage && (
-              <TouchableOpacity 
-                style={[styles.proofButton, { backgroundColor: theme.accentLight }]}
-                onPress={() => openProofModal(item.proofImage!)}
-              >
-                <Text style={styles.proofButtonText}>📸 Kanıtı Görüntüle</Text>
-              </TouchableOpacity>
-            )}
+            <View style={styles.divider} />
 
-            <Text style={[styles.note, { color: theme.text3 }]}>📝 {item.deliveryNote}</Text>
+            <View style={styles.cardFooter}>
+              <Text style={[styles.note, { color: theme.text2, flex: 1 }]}>📍 {item.deliveryNote}</Text>
+              {item.proofImage && (
+                <TouchableOpacity 
+                  style={[styles.proofBadge, { backgroundColor: '#10B98115' }]}
+                  onPress={() => openProofModal(item.proofImage!)}
+                >
+                  <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: 12 }}>📸 Kanıt</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-            {item.beneficiary && (
-              <View style={[styles.beneficiary, { backgroundColor: theme.accentXl }]}>
-                <Text style={[styles.beneficiaryText, { color: theme.accentDark }]}>
+            {item.beneficiary && item.status === 'delivered' && (
+              <View style={[styles.beneficiary, { backgroundColor: '#3B82F610' }]}>
+                <Text style={[styles.beneficiaryText, { color: '#3B82F6' }]}>
                   🙏 {item.beneficiary} isimli çocuğumuza ulaştı!
                 </Text>
               </View>
@@ -177,25 +210,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 15,
   },
   productName: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  status: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
   date: {
     fontSize: 12,
-    marginBottom: 12,
+  },
+  timelineContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  timelineStep: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  dotContainer: {
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 8,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    zIndex: 1,
+  },
+  line: {
+    position: 'absolute',
+    top: 6,
+    left: '50%',
+    width: '100%',
+    height: 2,
+  },
+  stepLabel: {
+    fontSize: 10,
+    textAlign: 'center',
   },
   friendBadge: {
     padding: 12,
     borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 8,
+    marginBottom: 15,
   },
   friendText: {
     fontSize: 14,
@@ -206,26 +265,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
   },
-  proofButton: {
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+  divider: {
+    height: 1,
+    backgroundColor: '#00000005',
+    marginBottom: 15,
   },
-  proofButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   note: {
     fontSize: 13,
-    marginTop: 8,
+    lineHeight: 18,
+  },
+  proofBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   beneficiary: {
     padding: 10,
     borderRadius: 10,
-    marginTop: 8,
+    marginTop: 12,
     alignItems: 'center',
   },
   beneficiaryText: {

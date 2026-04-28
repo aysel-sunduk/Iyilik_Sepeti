@@ -38,6 +38,6 @@ public class Product {
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 
-    private Boolean isActive;
-    private Boolean isDeleted;
+    private Boolean isActive = true;
+    private Boolean isDeleted = false;
 }

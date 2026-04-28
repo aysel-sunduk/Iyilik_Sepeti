@@ -25,6 +25,5 @@ public class RegisterRequest {
     private String lastName;
 
     @Schema(example = "05555555555")
-    @Pattern(regexp = "^0[0-9]{10}$", message = "Telefon 0 ile baslayan 11 haneli olmali")
     private String phone;
 }

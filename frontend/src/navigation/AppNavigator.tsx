@@ -1,8 +1,12 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
+import { Text } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
+import { useTheme } from '../context/ThemeContext';
+
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import CartScreen from '../screens/main/CartScreen';
@@ -16,33 +20,71 @@ import ProductDetailScreen from '../screens/main/ProductDetailScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-function AuthStack() {
+function TabNavigator() {
+  const { theme } = useTheme();
+  
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-    </Stack.Navigator>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
+          height: 70,
+          paddingBottom: 12,
+          paddingTop: 10,
+        },
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.text4,
+        tabBarIcon: ({ color, size }) => {
+          let icon = '🏠';
+          if (route.name === 'Ana Sayfa') icon = '🏠';
+          else if (route.name === 'Kategoriler') icon = '📂';
+          else if (route.name === 'Bağışlarım') icon = '❤️';
+          else if (route.name === 'Sepetim') icon = '🛒';
+          else if (route.name === 'Profil') icon = '👤';
+          return <Text style={{ fontSize: size }}>{icon}</Text>;
+        },
+      })}
+    >
+      <Tab.Screen name="Ana Sayfa" component={HomeScreen} />
+      <Tab.Screen name="Kategoriler" component={CategoriesScreen} />
+      <Tab.Screen name="Bağışlarım" component={DonationTrackingScreen} />
+      <Tab.Screen name="Sepetim" component={CartScreen} />
+      <Tab.Screen name="Profil" component={ProfileScreen} />
+    </Tab.Navigator>
   );
 }
 
 function MainStack() {
   return (
-    <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+      <Stack.Screen name="MainTabs" component={TabNavigator} />
       <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-      <Stack.Screen name="Cart" component={CartScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="DonationTracking" component={DonationTrackingScreen} />
       <Stack.Screen name="DonationFlow" component={DonationFlowScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="Categories" component={CategoriesScreen} />
       <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
   );
 }
 
 export default function AppNavigator() {
   const user = useSelector((state: RootState) => state.auth.user);
-  return <NavigationContainer>{user ? <MainStack /> : <AuthStack />}</NavigationContainer>;
+  return (
+    <NavigationContainer>
+      {user ? <MainStack /> : <AuthStack />}
+    </NavigationContainer>
+  );
 }

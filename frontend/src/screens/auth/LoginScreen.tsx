@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
+  Animated,
   ScrollView,
   Text,
   TouchableOpacity,
-  Animated,
+  View,
 } from 'react-native';
+import FloatingLabelInput from '../../components/form/FloatingLabelInput';
+import PasswordInput from '../../components/form/PasswordInput';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { loginStyles } from '../../styles';
-import FloatingLabelInput from '../../components/form/FloatingLabelInput';
-import PasswordInput from '../../components/form/PasswordInput';
 
 export default function LoginScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -50,14 +50,18 @@ export default function LoginScreen({ navigation }: any) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async () => {
-    if (!validate()) return;
-    setLoading(true);
-    const success = await login(email, password);
+const handleLogin = async () => {
+  if (!validate()) return;
+  setLoading(true);
+  try {
+    // ← İki ayrı parametre olarak gönder
+    await login(email, password);
+  } catch (error: any) {
+    setErrors({ general: error.message || 'Giriş başarısız' });
+  } finally {
     setLoading(false);
-    if (success) navigation.replace('App');
-  };
-
+  }
+};
   const handleBiometric = () => {
     biometricLogin();
     setTimeout(() => navigation.replace('App'), 500);

@@ -59,7 +59,7 @@ export default function RegisterScreen({ navigation }: any) {
     const success = await register(firstName, lastName, email, password);
     setLoading(false);
     if (success) {
-      navigation.replace('App');
+      // navigation.replace('App'); // Redux state change handles this
     }
   };
 

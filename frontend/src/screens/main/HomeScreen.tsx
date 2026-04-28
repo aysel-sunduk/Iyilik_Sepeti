@@ -1,61 +1,131 @@
-import React, { useState } from 'react';
-import {
-  Alert,
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
   TextInput,
-  TouchableOpacity,
-  View,
+  Dimensions,
+  Alert
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { RootState } from '../../redux/store';
+import { useAuth } from '../../hooks/useAuth';
+import { productService, Category, Product, Campaign } from '../../services/product/productService';
 
-const categories = [
-  { id: 1, name: 'Elektronik', icon: '📱', color: '#10B981' },
-  { id: 2, name: 'Giyim', icon: '👕', color: '#3B82F6' },
-  { id: 3, name: 'Gıda', icon: '🍎', color: '#F59E0B' },
-  { id: 4, name: 'Kozmetik', icon: '💄', color: '#EC4899' },
-  { id: 5, name: 'Oyuncak', icon: '🎮', color: '#8B5CF6' },
-  { id: 6, name: 'Kitap', icon: '📚', color: '#EF4444' },
-  { id: 7, name: 'Mama', icon: '🐕', color: '#F97316' },
-];
-
-const popularProducts = [
-  { id: 1, name: 'iPhone 15', price: 45000, image: '📱', seller: 'Apple Store', category: 'Elektronik' },
-  { id: 2, name: 'Kazak', price: 450, image: '👕', seller: 'LCW', category: 'Giyim' },
-  { id: 3, name: 'Gıda Kolisi', price: 350, image: '🍲', seller: 'A101', category: 'Gıda' },
-  { id: 4, name: 'Mama 15kg', price: 299, image: '🐕', seller: 'PetShop', category: 'Mama' },
-  { id: 5, name: 'Bot', price: 899, image: '👢', seller: 'Kinetix', category: 'Giyim' },
-  { id: 6, name: 'Powerbank', price: 199, image: '🔋', seller: 'Xiaomi', category: 'Elektronik' },
-];
-
-const donationCampaigns = [
-  { id: 1, productName: 'Okul Çantası', target: 500, raised: 320, unit: 'adet', image: '🎒', price: 150 },
-  { id: 2, productName: 'Battaniye', target: 1000, raised: 740, unit: 'adet', image: '🛏️', price: 89 },
-  { id: 3, productName: 'Kuru Mama', target: 2000, raised: 1250, unit: 'kg', image: '🐕', price: 45 },
-];
+const LogoutIcon = ({ color }: { color: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <Path d="M17 16L21 12L17 8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M21 12H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
 
 export default function HomeScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useDispatch();
+  const { logout } = useAuth();
   const user = useSelector((state: RootState) => state.auth.user);
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  
+  const [activeFilter, setActiveFilter] = useState('Hepsi');
   const [searchText, setSearchText] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleBuyForSelf = (product: any) => {
-    dispatch(addToCart({ ...product, quantity: 1, type: 'self' }));
-    Alert.alert('Başarılı', `${product.name} sepete eklendi!`, [
-      { text: 'Alışverişe Devam Et', style: 'cancel' },
-      { text: 'Sepete Git', onPress: () => navigation.navigate('Cart') }
+  const categoryConfigs: any = {
+    'gıda': { icon: '🍎', color: '#EF4444' },
+    'giyim': { icon: '👕', color: '#3B82F6' },
+    'hijyen': { icon: '✨', color: '#10B981' },
+    'çocuk': { icon: '🧸', color: '#F472B6' },
+    'hayvan': { icon: '🐾', color: '#FB923C' },
+    'temizlik': { icon: '🧼', color: '#3B82F6' },
+    'default': { icon: '📦', color: '#6B7280' }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    filterProducts();
+  }, [activeFilter, popularProducts]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [categoriesData, productsData, campaignsData] = await Promise.all([
+        productService.getCategories(),
+        productService.getPopularProducts(6),
+        productService.getCampaigns()
+      ]);
+      setCategories(categoriesData);
+      setPopularProducts(productsData);
+      setCampaigns(campaignsData);
+    } catch (error: any) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterProducts = () => {
+    let result = [...popularProducts];
+    if (activeFilter === 'İndirimdekiler') {
+      result = popularProducts.filter(p => p.price < 300);
+    } else if (activeFilter === 'Bağış Ürünleri') {
+      result = popularProducts.filter(p => p.category === 'Hayvan' || p.category === 'Çocuk');
+    } else if (activeFilter === 'Popüler') {
+      result = popularProducts.filter(p => p.price > 400);
+    } else if (activeFilter === 'Yeni') {
+      result = popularProducts.slice(0, 3);
+    }
+    setFilteredProducts(result);
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Çıkış', 'Oturumu kapatmak istediğinize emin misiniz?', [
+      { text: 'İptal', style: 'cancel' },
+      { text: 'Evet', onPress: async () => await logout() }
     ]);
   };
 
-  const handleDonate = (product: any) => {
-    navigation.navigate('DonationFlow', { product: { ...product, isDonation: true } });
+  const handleAddToCart = (product: Product) => {
+    dispatch(addToCart({ 
+      id: product.id, 
+      name: product.name, 
+      price: product.price, 
+      image: product.imageUrl || '📦', 
+      seller: product.category,
+      quantity: 1, 
+      type: 'self' 
+    }));
+    Alert.alert('Başarılı', `${product.name} sepete eklendi!`);
+  };
+
+  const handleDonateProduct = (product: Product) => {
+    navigation.navigate('DonationFlow', { 
+      product: { 
+        ...product, 
+        image: product.imageUrl || '📦',
+        seller: product.category,
+        isDonation: true 
+      } 
+    });
+  };
+
+  const handleDonateCampaign = (campaign: Campaign) => {
+    navigation.navigate('DonationFlow', { 
+      campaign: campaign,
+      isCampaign: true 
+    });
   };
 
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -69,266 +139,265 @@ export default function HomeScreen({ navigation }: any) {
               <Text style={[styles.greeting, { color: theme.text3 }]}>Merhaba 👋</Text>
               <Text style={[styles.userName, { color: theme.text1 }]}>{user?.firstName || 'Misafir'}!</Text>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('Cart')}>
-              <View style={styles.cartIcon}>
-                <Text style={{ fontSize: 24 }}>🛒</Text>
-                {cartItemCount > 0 && (
-                  <View style={[styles.cartBadge, { backgroundColor: theme.accent }]}>
-                    <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity onPress={handleLogout} style={{ padding: 4 }}>
+                <LogoutIcon color={theme.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Sepetim')}>
+                <View style={styles.cartIcon}>
+                  <Text style={{ fontSize: 24 }}>🛒</Text>
+                  {cartItemCount > 0 && (
+                    <View style={[styles.badge, { backgroundColor: theme.error }]}>
+                      <Text style={styles.badgeText}>{cartItemCount}</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
-
+          
           <View style={[styles.searchBar, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-            <Text style={{ fontSize: 16 }}>🔍</Text>
+            <Text style={{ fontSize: 20, marginRight: 10 }}>🔍</Text>
             <TextInput
+              placeholder="Ürün veya kategori ara..."
+              placeholderTextColor={theme.text3}
               style={[styles.searchInput, { color: theme.text1 }]}
-              placeholder="Ürün, kategori veya marka ara..."
-              placeholderTextColor={theme.text4}
               value={searchText}
               onChangeText={setSearchText}
             />
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.campaignBanner, { backgroundColor: theme.accentLight }]}
-          onPress={() => navigation.navigate('DonationCampaigns')}
-        >
-          <Text style={styles.campaignBannerEmoji}>🌱</Text>
-          <View style={styles.campaignBannerText}>
-            <Text style={[styles.campaignBannerTitle, { color: theme.accentDark }]}>Her alışveriş bir iyilik</Text>
-            <Text style={[styles.campaignBannerSub, { color: theme.text3 }]}>Bugün al, yarın bir cana umut ol</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.content}>
+          {/* Hızlı Filtreleme Chip'leri */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer} contentContainerStyle={styles.filtersContent}>
+            {['Hepsi', 'Bağış Ürünleri', 'İndirimdekiler', 'Popüler', 'Yeni'].map((filter, index) => (
+              <TouchableOpacity 
+                key={index} 
+                onPress={() => setActiveFilter(filter)}
+                style={[
+                  styles.filterChip, 
+                  activeFilter === filter ? { backgroundColor: theme.accent } : { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }
+                ]}
+              >
+                <Text style={[styles.filterText, activeFilter === filter ? { color: 'white' } : { color: theme.text2 }]}>{filter}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-        {/* Hızlı Aksiyon Butonları */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.quickActionBtn, { backgroundColor: theme.surface }]} onPress={() => navigation.navigate('Categories')}>
-            <Text style={styles.quickActionEmoji}>🛍️</Text>
-            <Text style={[styles.quickActionText, { color: theme.text2 }]}>Hızlı Alışveriş</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.quickActionBtn, { backgroundColor: theme.surface }]} onPress={() => navigation.navigate('DonationCampaigns')}>
-            <Text style={styles.quickActionEmoji}>🎁</Text>
-            <Text style={[styles.quickActionText, { color: theme.text2 }]}>Hızlı Bağış</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.quickActionBtn, { backgroundColor: theme.surface }]} onPress={() => navigation.navigate('DonationTracking')}>
-            <Text style={styles.quickActionEmoji}>📦</Text>
-            <Text style={[styles.quickActionText, { color: theme.text2 }]}>Bağışlarım</Text>
-          </TouchableOpacity>
-        </View>
+          {/* İyilik Hikayeleri (Stories) */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storiesContainer} contentContainerStyle={styles.storiesContent}>
+            <TouchableOpacity style={styles.storyItem} onPress={() => Alert.alert('Canlı Yayın', 'Şu an aktif bir yayın bulunmamaktadır.')}>
+              <View style={[styles.storyCircle, { borderColor: '#10B981' }]}>
+                <View style={styles.storyInner}><Text style={{fontSize: 24}}>🎬</Text></View>
+              </View>
+              <Text style={[styles.storyText, { color: theme.text2 }]}>Canlı</Text>
+            </TouchableOpacity>
+            {['Mama Dağıtımı', 'Yeni Okul', 'Sokak Dostları', 'Duyuru'].map((story, index) => (
+              <TouchableOpacity key={index} style={styles.storyItem} onPress={() => Alert.alert('Hikaye', `${story} videosu yükleniyor...`)}>
+                <View style={[styles.storyCircle, { borderColor: theme.accent }]}>
+                  <View style={styles.storyInner}><Text style={{fontSize: 24}}>{['🐕', '🎒', '🦴', '📢'][index]}</Text></View>
+                </View>
+                <Text style={[styles.storyText, { color: theme.text2 }]} numberOfLines={1}>{story}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-        {/* Bugünün Bağış Hedefi */}
-        <View style={[styles.dailyGoal, { backgroundColor: theme.accentLight }]}>
-          <Text style={styles.dailyGoalEmoji}>🎯</Text>
-          <View style={styles.dailyGoalContent}>
-            <Text style={[styles.dailyGoalTitle, { color: theme.text1 }]}>Bugünkü Bağış Hedefi</Text>
-            <Text style={[styles.dailyGoalText, { color: theme.text3 }]}>2.000 mama / 1.250 tamamlandı</Text>
-            <View style={styles.dailyGoalProgress}>
-              <View style={[styles.dailyGoalFill, { width: '62%', backgroundColor: theme.accent }]} />
+          {/* Main Hero Banner */}
+          <View style={[styles.heroBanner, { backgroundColor: '#F3F4F6' }]}>
+            <View style={styles.heroContent}>
+              <Text style={[styles.heroTitle, { color: '#1F2937' }]}>Yeni Sezon Ürünler 🌟</Text>
+              <Text style={[styles.heroSubtitle, { color: '#4B5563' }]}>En kaliteli ürünler, en uygun fiyatlarla kapında.</Text>
+              <TouchableOpacity style={[styles.heroButton, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Kategoriler')}>
+                <Text style={[styles.heroButtonText, { color: 'white' }]}>Koleksiyonu İncele</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        {/* Kategoriler */}
-        <View style={styles.section}>
+          {/* Quick Access */}
+          <View style={styles.quickAccess}>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
+              <View style={[styles.quickIcon, { backgroundColor: '#3B82F615' }]}><Text style={{fontSize: 24}}>⚡</Text></View>
+              <Text style={[styles.quickText, { color: theme.text2 }]}>Flaş İndirim</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Sepetim')}>
+              <View style={[styles.quickIcon, { backgroundColor: '#10B98115' }]}><Text style={{fontSize: 24}}>🤝</Text></View>
+              <Text style={[styles.quickText, { color: theme.text2 }]}>Bağışla</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
+              <View style={[styles.quickIcon, { backgroundColor: '#F59E0B15' }]}><Text style={{fontSize: 24}}>⭐</Text></View>
+              <Text style={[styles.quickText, { color: theme.text2 }]}>Popüler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
+              <View style={[styles.quickIcon, { backgroundColor: '#EC489915' }]}><Text style={{fontSize: 24}}>📍</Text></View>
+              <Text style={[styles.quickText, { color: theme.text2 }]}>Yakınımda</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Categories Section */}
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text1 }]}>Kategoriler</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Categories')}>
-              <Text style={[styles.sectionLink, { color: theme.accent }]}>Tümü →</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Kategoriler')}>
+              <Text style={[styles.seeAll, { color: theme.accent }]}>Tümü →</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={categories}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={{ paddingLeft: 20 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.categoryCard, { backgroundColor: theme.surface }]}
-                onPress={() => navigation.navigate('Categories', { selectedCategory: item.name })}
-              >
-                <View style={[styles.categoryIcon, { backgroundColor: item.color + '20' }]}>
-                  <Text style={{ fontSize: 32 }}>{item.icon}</Text>
-                </View>
-                <Text style={[styles.categoryName, { color: theme.text2 }]}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-
-        {/* Popüler Ürünler - Ticaret */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🔥 Popüler Ürünler</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('AllProducts')}>
-              <Text style={[styles.sectionLink, { color: theme.accent }]}>Tümü →</Text>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={popularProducts}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={{ paddingLeft: 20 }}
-            renderItem={({ item }) => (
-              <View style={[styles.productCardWrapper, { backgroundColor: theme.surface }]}>
-                <TouchableOpacity onPress={() => navigation.navigate('ProductDetail', { product: item })}>
-                  <View style={styles.productImage}>
-                    <Text style={{ fontSize: 48 }}>{item.image}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
+            {categories.map((category) => {
+              const config = categoryConfigs[category.name.toLowerCase()] || categoryConfigs['default'];
+              return (
+                <TouchableOpacity 
+                  key={category.id} 
+                  style={styles.categoryItem}
+                  onPress={() => navigation.navigate('Kategoriler', { categoryName: category.name })}
+                >
+                  <View style={[styles.categoryIconContainer, { backgroundColor: config.color + '15' }]}>
+                    <Text style={styles.categoryIcon}>{config.icon}</Text>
                   </View>
-                  <Text style={[styles.productName, { color: theme.text1 }]}>{item.name}</Text>
-                  <Text style={[styles.productPrice, { color: theme.accent }]}>₺{item.price.toLocaleString()}</Text>
-                  <Text style={[styles.productSeller, { color: theme.text4 }]}>{item.seller}</Text>
+                  <Text style={[styles.categoryName, { color: theme.text2 }]} numberOfLines={1}>
+                    {category.name}
+                  </Text>
                 </TouchableOpacity>
-                <View style={styles.productActions}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: theme.accentLight }]}
-                    onPress={() => handleBuyForSelf(item)}
-                  >
-                    <Text style={styles.actionButtonText}>🛍️ Kendine Al</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: theme.accentXl }]}
-                    onPress={() => handleDonate(item)}
-                  >
-                    <Text style={[styles.actionButtonText, { color: theme.accent }]}>🎁 Bağış Yap</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          />
-        </View>
+              );
+            })}
+          </ScrollView>
 
-        {/* Bağış Kampanyaları */}
-        <View style={[styles.section, styles.donationSection]}>
+          {/* Popular Products Section */}
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🎁 Bağış Bekleyen Ürünler</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('AllDonationCampaigns')}>
-              <Text style={[styles.sectionLink, { color: theme.accent }]}>Tümü →</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🔥 Öne Çıkan Ürünler</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Kategoriler')}>
+              <Text style={[styles.seeAll, { color: theme.accent }]}>Tümü →</Text>
             </TouchableOpacity>
           </View>
-          {donationCampaigns.map((campaign) => (
-            <View key={campaign.id} style={[styles.donationCard, { backgroundColor: theme.accentXl }]}>
-              <View style={styles.donationCardLeft}>
-                <Text style={{ fontSize: 48 }}>{campaign.image}</Text>
-              </View>
-              <View style={styles.donationCardRight}>
-                <Text style={[styles.donationTitle, { color: theme.text1 }]}>{campaign.productName}</Text>
-                <Text style={[styles.donationPrice, { color: theme.accent }]}>₺{campaign.price}</Text>
-                <View style={styles.donationProgress}>
-                  <View style={[styles.donationProgressFill, { width: `${(campaign.raised / campaign.target) * 100}%`, backgroundColor: theme.accent }]} />
+          <View style={styles.productsGrid}>
+            {filteredProducts.map((product) => (
+              <TouchableOpacity 
+                key={product.id} 
+                style={[styles.productCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                onPress={() => navigation.navigate('ProductDetail', { product })}
+              >
+                <View style={[styles.productImageContainer, { backgroundColor: theme.bg }]}>
+                   <Text style={{ fontSize: 40 }}>{categoryConfigs[product.category.toLowerCase()]?.icon || '📦'}</Text>
                 </View>
-                <View style={styles.donationStats}>
-                  <Text style={[styles.donationText, { color: theme.text3 }]}>
-                    {campaign.raised} / {campaign.target} {campaign.unit}
+                <View style={styles.productInfo}>
+                  <Text style={[styles.productName, { color: theme.text1 }]} numberOfLines={1}>{product.name}</Text>
+                  <Text style={[styles.productPrice, { color: theme.accent }]}>{product.price.toLocaleString('tr-TR')} ₺</Text>
+                  <View style={styles.productActions}>
+                    <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#3B82F6' }]} onPress={() => handleAddToCart(product)}>
+                      <Text style={[styles.actionButtonText, { color: 'white' }]}>Sepet</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10B981' }]} onPress={() => handleDonateProduct(product)}>
+                      <Text style={[styles.actionButtonText, { color: 'white' }]}>Bağış</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Campaigns Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🙏 BAĞIŞ KAMPANYALARI</Text>
+          </View>
+          {campaigns.map((campaign) => (
+            <View 
+              key={campaign.id} 
+              style={[styles.campaignCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+            >
+              <View style={styles.campaignHeader}>
+                <View style={[styles.campaignImage, { backgroundColor: theme.bg }]}>
+                  <Text style={{ fontSize: 30 }}>{campaign.title.includes('Hayvan') ? '🐾' : '🎒'}</Text>
+                </View>
+                <View style={styles.campaignInfo}>
+                  <Text style={[styles.campaignTitle, { color: theme.text1 }]}>{campaign.title}</Text>
+                  <Text style={[styles.campaignProgressText, { color: theme.text3 }]}>
+                    {campaign.raisedCount} / {campaign.targetCount} {campaign.unit} toplandı
                   </Text>
-                  <TouchableOpacity
-                    style={[styles.donateButton, { backgroundColor: theme.accent }]}
-                    onPress={() => handleDonate({ name: campaign.productName, price: campaign.price, image: campaign.image, isCampaign: true, campaignId: campaign.id })}
-                  >
-                    <Text style={styles.donateButtonText}>Bağış Yap →</Text>
-                  </TouchableOpacity>
                 </View>
+                <TouchableOpacity 
+                  style={[styles.donateButton, { backgroundColor: theme.accent }]}
+                  onPress={() => handleDonateCampaign(campaign)}
+                >
+                  <Text style={styles.donateButtonText}>Bağış Yap</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.progressBarContainer, { backgroundColor: theme.bg }]}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      backgroundColor: theme.accent, 
+                      width: `${Math.min(100, (campaign.raisedCount / campaign.targetCount) * 100)}%` 
+                    }
+                  ]} 
+                />
               </View>
             </View>
           ))}
+          
+          <View style={{ height: 20 }} />
         </View>
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={[styles.bottomNav, { backgroundColor: theme.surface, borderTopColor: theme.border, borderTopWidth: 1 }]}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.replace('Home')}>
-          <Text style={styles.navIcon}>🏠</Text>
-          <Text style={[styles.navLabel, { color: theme.accent }]}>Ana Sayfa</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Categories')}>
-          <Text style={styles.navIcon}>📂</Text>
-          <Text style={[styles.navLabel, { color: theme.text4 }]}>Kategoriler</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Cart')}>
-          <Text style={styles.navIcon}>🛒</Text>
-          <Text style={[styles.navLabel, { color: theme.text4 }]}>Sepetim</Text>
-          {cartItemCount > 0 && (
-            <View style={[styles.navBadge, { backgroundColor: theme.accent }]}>
-              <Text style={styles.navBadgeText}>{cartItemCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DonationTracking')}>
-          <Text style={styles.navIcon}>🎁</Text>
-          <Text style={[styles.navLabel, { color: theme.text4 }]}>Bağışlarım</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={[styles.navLabel, { color: theme.text4 }]}>Profil</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  greeting: { fontSize: 14, marginBottom: 4 },
-  userName: { fontSize: 20, fontWeight: 'bold' },
-  cartIcon: { position: 'relative' },
-  cartBadge: { position: 'absolute', top: -8, right: -12, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, minWidth: 20, alignItems: 'center' },
-  cartBadgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1, gap: 10 },
+  header: { padding: 20, paddingTop: 60, borderBottomWidth: 1 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  greeting: { fontSize: 16, fontWeight: '500' },
+  userName: { fontSize: 22, fontWeight: 'bold' },
+  cartIcon: { position: 'relative', padding: 5 },
+  badge: { position: 'absolute', top: 0, right: 0, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5 },
+  badgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, height: 50, borderRadius: 12, borderWidth: 1 },
   searchInput: { flex: 1, fontSize: 16 },
-  campaignBanner: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginVertical: 16, padding: 16, borderRadius: 20 },
-  campaignBannerEmoji: { fontSize: 32, marginRight: 12 },
-  campaignBannerText: { flex: 1 },
-  campaignBannerTitle: { fontSize: 16, fontWeight: 'bold' },
-  campaignBannerSub: { fontSize: 13, marginTop: 4 },
-  quickActions: { flexDirection: 'row', justifyContent: 'space-around', marginHorizontal: 20, marginBottom: 16, gap: 12 },
-  quickActionBtn: { flex: 1, padding: 14, borderRadius: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  quickActionEmoji: { fontSize: 20 },
-  quickActionText: { fontSize: 13, fontWeight: '500' },
-  dailyGoal: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginBottom: 24, padding: 16, borderRadius: 20 },
-  dailyGoalEmoji: { fontSize: 28, marginRight: 12 },
-  dailyGoalContent: { flex: 1 },
-  dailyGoalTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-  dailyGoalText: { fontSize: 12, marginBottom: 8 },
-  dailyGoalProgress: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, overflow: 'hidden' },
-  dailyGoalFill: { height: '100%', borderRadius: 4 },
-  section: { marginTop: 24, marginBottom: 8 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold' },
-  sectionLink: { fontSize: 14 },
-  categoryCard: { alignItems: 'center', marginRight: 16, padding: 12, borderRadius: 16, width: 80 },
-  categoryIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  categoryName: { fontSize: 12, textAlign: 'center' },
-  productCardWrapper: { marginRight: 16, padding: 12, borderRadius: 16, width: 180 },
-  productImage: { width: '100%', height: 120, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  productName: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  productPrice: { fontSize: 16, fontWeight: 'bold', marginBottom: 2 },
-  productSeller: { fontSize: 11 },
-  productActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, gap: 8 },
-  actionButton: { flex: 1, paddingVertical: 8, borderRadius: 20, alignItems: 'center' },
-  actionButtonText: { fontSize: 11, fontWeight: '600' },
-  donationSection: { marginBottom: 80 },
-  donationCard: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 12, padding: 16, borderRadius: 16 },
-  donationCardLeft: { marginRight: 16, justifyContent: 'center' },
-  donationCardRight: { flex: 1 },
-  donationTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  donationPrice: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  donationProgress: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
-  donationProgressFill: { height: '100%', borderRadius: 4 },
-  donationStats: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  donationText: { fontSize: 12 },
-  donateButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  donateButtonText: { color: 'white', fontSize: 12, fontWeight: '600' },
-  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 12, position: 'absolute', bottom: 0, left: 0, right: 0 },
-  navItem: { alignItems: 'center', position: 'relative' },
-  navIcon: { fontSize: 24, marginBottom: 4 },
-  navLabel: { fontSize: 11 },
-  navBadge: { position: 'absolute', top: -6, right: -12, borderRadius: 10, paddingHorizontal: 5, paddingVertical: 1, minWidth: 18, alignItems: 'center' },
-  navBadgeText: { color: 'white', fontSize: 9, fontWeight: 'bold' },
+  content: { padding: 20 },
+  filtersContainer: { marginBottom: 20 },
+  filtersContent: { paddingHorizontal: 0, gap: 10 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  filterText: { fontSize: 13, fontWeight: '600' },
+  storiesContainer: { marginBottom: 20 },
+  storiesContent: { paddingRight: 20 },
+  storyItem: { alignItems: 'center', marginRight: 15, width: 70 },
+  storyCircle: { width: 66, height: 66, borderRadius: 33, borderWidth: 2, padding: 3, justifyContent: 'center', alignItems: 'center', marginBottom: 5 },
+  storyInner: { width: '100%', height: '100%', borderRadius: 30, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  storyText: { fontSize: 11, fontWeight: '500', textAlign: 'center' },
+  heroBanner: { borderRadius: 24, padding: 24, marginBottom: 24, overflow: 'hidden', borderWidth: 1 },
+  heroContent: { zIndex: 1 },
+  heroTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
+  heroSubtitle: { fontSize: 14, lineHeight: 20, marginBottom: 16, opacity: 0.9 },
+  heroButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, alignSelf: 'flex-start' },
+  heroButtonText: { fontSize: 14, fontWeight: 'bold' },
+  quickAccess: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32 },
+  quickItem: { alignItems: 'center' },
+  quickIcon: { width: 54, height: 54, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  quickText: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: 'bold' },
+  seeAll: { fontSize: 14, fontWeight: '600' },
+  categoriesContainer: { paddingBottom: 10, marginBottom: 20 },
+  categoryItem: { alignItems: 'center', marginRight: 20, width: 80 },
+  categoryIconContainer: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginBottom: 8, elevation: 1 },
+  categoryIcon: { fontSize: 32 },
+  categoryName: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  productsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 20 },
+  productCard: { width: '48%', borderRadius: 20, marginBottom: 16, padding: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, borderWidth: 1 },
+  productImageContainer: { width: '100%', height: 140, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  productInfo: { paddingHorizontal: 4 },
+  productName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+  productPrice: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  productActions: { flexDirection: 'row', gap: 6 },
+  actionButton: { flex: 1, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  actionButtonText: { fontSize: 11, fontWeight: 'bold' },
+  campaignCard: { borderRadius: 20, borderWidth: 1, padding: 15, marginBottom: 15 },
+  campaignHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  campaignImage: { width: 60, height: 60, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  campaignInfo: { flex: 1 },
+  campaignTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  campaignProgressText: { fontSize: 13 },
+  donateButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
+  donateButtonText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  progressBarContainer: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  progressBar: { height: '100%', borderRadius: 4 }
 });

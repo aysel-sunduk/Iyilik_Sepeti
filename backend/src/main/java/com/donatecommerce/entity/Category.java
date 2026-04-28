@@ -22,6 +22,9 @@ public class Category {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @Column(name = "name_slug", unique = true, length = 120)
+    private String nameSlug;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
