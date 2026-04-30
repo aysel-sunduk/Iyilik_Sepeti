@@ -1,25 +1,28 @@
+// service/CategoryService.java
 package com.donatecommerce.service;
 
-import com.donatecommerce.entity.Category;
-import com.donatecommerce.repository.CategoryRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-public class CategoryService {
+import com.donatecommerce.dto.request.CategoryCreateRequest;
+import com.donatecommerce.dto.response.CategoryResponse;
+import com.donatecommerce.entity.CategoryType;
 
-    private final CategoryRepository categoryRepository;
-
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
-    }
-
-    public List<Category> getActiveCategories() {
-        return categoryRepository.findAll().stream()
-                .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
-                .toList();
-    }
+public interface CategoryService {
+    
+    List<CategoryResponse> getAllCategories();
+    
+    List<CategoryResponse> getActiveCategories();
+    
+    List<CategoryResponse> getCategoriesByType(CategoryType type);
+    
+    CategoryResponse getCategoryById(UUID id);
+    
+    CategoryResponse getCategoryByName(String name);
+    
+    CategoryResponse createCategory(CategoryCreateRequest request);
+    
+    CategoryResponse updateCategory(UUID id, CategoryCreateRequest request);
+    
+    void deleteCategory(UUID id);
 }

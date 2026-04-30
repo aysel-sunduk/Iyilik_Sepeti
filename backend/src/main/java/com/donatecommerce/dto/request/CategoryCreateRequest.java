@@ -1,20 +1,14 @@
-// dto/response/CategoryResponse.java
-package com.donatecommerce.dto.response;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+// dto/request/CategoryCreateRequest.java
+package com.donatecommerce.dto.request;
 
 import com.donatecommerce.entity.CategoryType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "Kategori yanıtı")
-public class CategoryResponse {
+@Schema(description = "Kategori oluşturma isteği")
+public class CategoryCreateRequest {
     
-    @Schema(description = "Kategori ID", example = "550e8400-e29b-41d4-a716-446655440000")
-    private UUID id;
-    
-    @Schema(description = "Kategori adı", example = "Eğitim")
+    @Schema(description = "Kategori adı", required = true, example = "Eğitim")
     private String name;
     
     @Schema(description = "Kategori slug", example = "egitim")
@@ -26,19 +20,10 @@ public class CategoryResponse {
     @Schema(description = "Resim URL", example = "https://example.com/category.jpg")
     private String imageUrl;
     
-    @Schema(description = "Kategori tipi", example = "BOTH")
+    @Schema(description = "Kategori tipi", required = true, example = "BOTH")
     private CategoryType type;
     
-    @Schema(description = "Oluşturulma tarihi")
-    private LocalDateTime createdAt;
-    
-    @Schema(description = "Aktif mi?", example = "true")
-    private Boolean isActive;
-    
     // Getters and Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     
@@ -53,10 +38,4 @@ public class CategoryResponse {
     
     public CategoryType getType() { return type; }
     public void setType(CategoryType type) { this.type = type; }
-    
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

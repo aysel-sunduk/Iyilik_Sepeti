@@ -1,34 +1,33 @@
+// service/ProductService.java
 package com.donatecommerce.service;
 
 import java.util.List;
+import java.util.UUID;
 
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
 
-import com.donatecommerce.entity.Product;
-import com.donatecommerce.repository.ProductRepository;
+import com.donatecommerce.dto.request.ProductCreateRequest;
+import com.donatecommerce.dto.request.ProductFilterRequest;
+import com.donatecommerce.dto.request.ProductUpdateRequest;
+import com.donatecommerce.dto.response.ProductResponse;
 
-import lombok.RequiredArgsConstructor;
-
-@Service
-@RequiredArgsConstructor
-public class ProductService {
-
-    private final ProductRepository productRepository;
-
-    public List<Product> getAllActiveProducts() {
-        return productRepository.findAll().stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
-                .toList();
-    }
-
-    public List<Product> getProductsByCategory(String categoryName) {
-        return productRepository.findByCategory(categoryName);
-    }
-
-    public List<Product> getPopularProducts(int limit) {
-        return productRepository.findAll().stream()
-                .filter(p -> Boolean.TRUE.equals(p.getIsActive()))
-                .limit(limit)
-                .toList();
-    }
+public interface ProductService {
+    
+    List<ProductResponse> getAllProducts();
+    
+    Page<ProductResponse> getProductsWithFilters(ProductFilterRequest filterRequest);
+    
+    ProductResponse getProductById(UUID id);
+    
+    List<ProductResponse> getProductsByCategory(String category);
+    
+    List<ProductResponse> getDonationProducts();
+    
+    List<ProductResponse> getPopularDonationProducts(int limit);
+    
+    ProductResponse createProduct(ProductCreateRequest request);
+    
+    ProductResponse updateProduct(UUID id, ProductUpdateRequest request);
+    
+    void deleteProduct(UUID id);
 }

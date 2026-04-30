@@ -1,6 +1,7 @@
 package com.donatecommerce.entity;
 
 public enum CategoryType {
-    people,
-    animals
+      SHOPPING,   // Sadece alışveriş ürünleri
+    DONATION,   // Sadece bağış ürünleri
+    BOTH        // Hem alışveriş hem bağış
 }
