@@ -118,8 +118,9 @@ export default function CheckoutScreen({ navigation }: any) {
 
             {isGift && (
               <TextInput
-                style={[styles.input, { borderColor: theme.accent + '50', marginTop: 10, backgroundColor: 'white' }]}
+                style={[styles.input, { borderColor: theme.accent + '50', marginTop: 10, backgroundColor: theme.isDark ? theme.bg : '#F3F4F6', color: theme.text1 }]}
                 placeholder="Arkadaşının Adı Soyadı"
+                placeholderTextColor={theme.text4}
                 value={friendName}
                 onChangeText={setFriendName}
               />
@@ -139,12 +140,14 @@ export default function CheckoutScreen({ navigation }: any) {
             <TextInput
               style={[styles.input, { borderColor: theme.border, color: theme.text1 }]}
               placeholder="Ad Soyad"
+              placeholderTextColor={theme.text4}
               value={name}
               onChangeText={setName}
             />
             <TextInput
               style={[styles.input, { borderColor: theme.border, color: theme.text1, marginTop: 10 }]}
               placeholder="Telefon"
+              placeholderTextColor={theme.text4}
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
@@ -152,6 +155,7 @@ export default function CheckoutScreen({ navigation }: any) {
             <TextInput
               style={[styles.textArea, { borderColor: theme.border, color: theme.text1, marginTop: 10 }]}
               placeholder="Tam Adresiniz..."
+              placeholderTextColor={theme.text4}
               multiline
               numberOfLines={3}
               value={address}

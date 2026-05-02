@@ -61,11 +61,11 @@ public class SeedDataService {
                 .build());
 
         // 3. Kategorileri oluştur...
-        createCategory("gıda", CategoryType.people);
-        createCategory("giyim", CategoryType.people);
-        createCategory("hijyen", CategoryType.people);
-        createCategory("çocuk", CategoryType.people);
-        createCategory("hayvan", CategoryType.animals);
+        createCategory("gıda", CategoryType.BOTH);
+        createCategory("giyim", CategoryType.BOTH);
+        createCategory("hijyen", CategoryType.BOTH);
+        createCategory("çocuk", CategoryType.BOTH);
+        createCategory("hayvan", CategoryType.DONATION);
 
         // 3. 100 Adet Ürünü Hazırla
         List<Product> products = new ArrayList<>();

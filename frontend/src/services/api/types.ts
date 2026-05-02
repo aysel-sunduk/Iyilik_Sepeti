@@ -100,3 +100,105 @@ export interface ApiError {
   statusCode: number;
   timestamp: string;
 }
+
+// Campaign Types
+export interface CampaignResponse {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  targetAmount: number;
+  raisedAmount: number;
+  unit: string;
+  targetCount: number;
+  raisedCount: number;
+  isActive: boolean;
+  progressPercentage: number;
+  createdAt: string;
+}
+
+export interface CampaignCreateRequest {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  targetAmount?: number;
+  raisedAmount?: number;
+  unit?: string;
+  targetCount?: number;
+  raisedCount?: number;
+}
+
+// Category Types
+export type CategoryType = 'SHOPPING' | 'DONATION' | 'BOTH';
+
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  nameSlug: string;
+  description: string;
+  imageUrl: string;
+  type: CategoryType;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface CategoryCreateRequest {
+  name: string;
+  nameSlug?: string;
+  description?: string;
+  imageUrl?: string;
+  type: CategoryType;
+}
+
+// Product Types
+export interface ProductResponse {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  imageUrl: string;
+  stockQuantity: number;
+  donationCount: number;
+  campaign?: CampaignResponse;
+  unit: string;
+  isDonationProduct: boolean;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface ProductCreateRequest {
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  imageUrl?: string;
+  stockQuantity?: number;
+  donationCount?: number;
+  campaignId?: string;
+  unit?: string;
+}
+
+export interface ProductUpdateRequest extends Partial<ProductCreateRequest> {}
+
+export interface ProductFilterRequest {
+  category?: string;
+  isDonationProduct?: boolean;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minDonationCount?: number;
+  inStock?: boolean;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+}

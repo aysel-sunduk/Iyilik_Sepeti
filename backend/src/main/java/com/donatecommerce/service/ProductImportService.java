@@ -1,5 +1,16 @@
 package com.donatecommerce.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import com.donatecommerce.dto.FakeStoreProductDTO;
 import com.donatecommerce.dto.request.ImportRequest;
 import com.donatecommerce.dto.response.ImportResponse;
@@ -8,15 +19,9 @@ import com.donatecommerce.entity.CategoryType;
 import com.donatecommerce.entity.Product;
 import com.donatecommerce.repository.CategoryRepository;
 import com.donatecommerce.repository.ProductRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -202,7 +207,7 @@ public class ProductImportService {
                     Category newCategory = new Category();
                     newCategory.setName(normalizedName);
                     newCategory.setDescription("Products in " + normalizedName + " category");
-                    newCategory.setType(CategoryType.people);
+                    newCategory.setType(CategoryType.SHOPPING);
                     newCategory.setIsActive(true);
                     newCategory.setCreatedAt(LocalDateTime.now());
                     

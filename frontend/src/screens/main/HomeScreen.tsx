@@ -15,7 +15,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { RootState } from '../../redux/store';
 import { useAuth } from '../../hooks/useAuth';
-import { productService, Category, Product, Campaign } from '../../services/product/productService';
+import api from '../../services/api/api';
+import { CategoryResponse as Category, ProductResponse as Product, CampaignResponse as Campaign } from '../../services/api/types';
+import { Modal } from 'react-native';
+
 
 const LogoutIcon = ({ color }: { color: string }) => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -40,12 +43,23 @@ export default function HomeScreen({ navigation }: any) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Custom Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', message: '', icon: '' });
+
+  const showAlert = (title: string, message: string, icon: string = '✨') => {
+    setModalContent({ title, message, icon });
+    setModalVisible(true);
+  };
+
   const categoryConfigs: any = {
     'gıda': { icon: '🍎', color: '#EF4444' },
     'giyim': { icon: '👕', color: '#3B82F6' },
     'hijyen': { icon: '✨', color: '#10B981' },
     'çocuk': { icon: '🧸', color: '#F472B6' },
     'hayvan': { icon: '🐾', color: '#FB923C' },
+    'hayvan hakları': { icon: '🐾', color: '#FB923C' },
+    'eğitim': { icon: '📚', color: '#3B82F6' },
     'temizlik': { icon: '🧼', color: '#3B82F6' },
     'default': { icon: '📦', color: '#6B7280' }
   };
@@ -62,12 +76,12 @@ export default function HomeScreen({ navigation }: any) {
     try {
       setLoading(true);
       const [categoriesData, productsData, campaignsData] = await Promise.all([
-        productService.getCategories(),
-        productService.getPopularProducts(6),
-        productService.getCampaigns()
+        api.categories.getAll(),
+        api.products.getAll(),
+        api.campaigns.getAll()
       ]);
       setCategories(categoriesData);
-      setPopularProducts(productsData);
+      setPopularProducts(productsData.slice(0, 6)); // Öne çıkanlar için ilk 6'yı al
       setCampaigns(campaignsData);
     } catch (error: any) {
       console.error('Error fetching data:', error);
@@ -81,7 +95,7 @@ export default function HomeScreen({ navigation }: any) {
     if (activeFilter === 'İndirimdekiler') {
       result = popularProducts.filter(p => p.price < 300);
     } else if (activeFilter === 'Bağış Ürünleri') {
-      result = popularProducts.filter(p => p.category === 'Hayvan' || p.category === 'Çocuk');
+      result = popularProducts.filter(p => p.category.toLowerCase().includes('hayvan') || p.category.toLowerCase().includes('çocuk'));
     } else if (activeFilter === 'Popüler') {
       result = popularProducts.filter(p => p.price > 400);
     } else if (activeFilter === 'Yeni') {
@@ -91,10 +105,7 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleLogout = () => {
-    Alert.alert('Çıkış', 'Oturumu kapatmak istediğinize emin misiniz?', [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'Evet', onPress: async () => await logout() }
-    ]);
+    showAlert('Çıkış', 'Oturumu kapatmak istediğinize emin misiniz?', '🚪');
   };
 
   const handleAddToCart = (product: Product) => {
@@ -107,7 +118,7 @@ export default function HomeScreen({ navigation }: any) {
       quantity: 1, 
       type: 'self' 
     }));
-    Alert.alert('Başarılı', `${product.name} sepete eklendi!`);
+    showAlert('Başarılı', `${product.name} sepete eklendi!`, '🛒');
   };
 
   const handleDonateProduct = (product: Product) => {
@@ -187,16 +198,16 @@ export default function HomeScreen({ navigation }: any) {
 
           {/* İyilik Hikayeleri (Stories) */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storiesContainer} contentContainerStyle={styles.storiesContent}>
-            <TouchableOpacity style={styles.storyItem} onPress={() => Alert.alert('Canlı Yayın', 'Şu an aktif bir yayın bulunmamaktadır.')}>
+            <TouchableOpacity style={styles.storyItem} onPress={() => showAlert('Canlı Yayın', 'Şu an aktif bir yayın bulunmamaktadır.', '🎬')}>
               <View style={[styles.storyCircle, { borderColor: '#10B981' }]}>
-                <View style={styles.storyInner}><Text style={{fontSize: 24}}>🎬</Text></View>
+                <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{fontSize: 24}}>🎬</Text></View>
               </View>
               <Text style={[styles.storyText, { color: theme.text2 }]}>Canlı</Text>
             </TouchableOpacity>
             {['Mama Dağıtımı', 'Yeni Okul', 'Sokak Dostları', 'Duyuru'].map((story, index) => (
-              <TouchableOpacity key={index} style={styles.storyItem} onPress={() => Alert.alert('Hikaye', `${story} videosu yükleniyor...`)}>
+              <TouchableOpacity key={index} style={styles.storyItem} onPress={() => showAlert('Hikaye', `${story} videosu yükleniyor...`, ['🐕', '🎒', '🦴', '📢'][index])}>
                 <View style={[styles.storyCircle, { borderColor: theme.accent }]}>
-                  <View style={styles.storyInner}><Text style={{fontSize: 24}}>{['🐕', '🎒', '🦴', '📢'][index]}</Text></View>
+                  <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{fontSize: 24}}>{['🐕', '🎒', '🦴', '📢'][index]}</Text></View>
                 </View>
                 <Text style={[styles.storyText, { color: theme.text2 }]} numberOfLines={1}>{story}</Text>
               </TouchableOpacity>
@@ -204,10 +215,10 @@ export default function HomeScreen({ navigation }: any) {
           </ScrollView>
 
           {/* Main Hero Banner */}
-          <View style={[styles.heroBanner, { backgroundColor: '#F3F4F6' }]}>
+          <View style={[styles.heroBanner, { backgroundColor: theme.isDark ? theme.surface : '#F3F4F6', borderColor: theme.border }]}>
             <View style={styles.heroContent}>
-              <Text style={[styles.heroTitle, { color: '#1F2937' }]}>Yeni Sezon Ürünler 🌟</Text>
-              <Text style={[styles.heroSubtitle, { color: '#4B5563' }]}>En kaliteli ürünler, en uygun fiyatlarla kapında.</Text>
+              <Text style={[styles.heroTitle, { color: theme.text1 }]}>Yeni Sezon Ürünler 🌟</Text>
+              <Text style={[styles.heroSubtitle, { color: theme.text2 }]}>En kaliteli ürünler, en uygun fiyatlarla kapında.</Text>
               <TouchableOpacity style={[styles.heroButton, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Kategoriler')}>
                 <Text style={[styles.heroButtonText, { color: 'white' }]}>Koleksiyonu İncele</Text>
               </TouchableOpacity>
@@ -337,6 +348,52 @@ export default function HomeScreen({ navigation }: any) {
           <View style={{ height: 20 }} />
         </View>
       </ScrollView>
+
+      {/* Custom Sweet Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <TouchableOpacity 
+              style={styles.closeModal} 
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={{ fontSize: 20, color: theme.text3 }}>✕</Text>
+            </TouchableOpacity>
+            <View style={[styles.modalIconContainer, { backgroundColor: theme.accent + '15' }]}>
+              <Text style={{ fontSize: 40 }}>{modalContent.icon}</Text>
+            </View>
+            <Text style={[styles.modalTitle, { color: theme.text1 }]}>{modalContent.title}</Text>
+            <Text style={[styles.modalMessage, { color: theme.text2 }]}>{modalContent.message}</Text>
+            
+            <View style={styles.modalActions}>
+              {modalContent.title === 'Çıkış' && (
+                <TouchableOpacity 
+                  style={[styles.modalButton, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={[styles.closeButtonText, { color: theme.text2 }]}>İptal</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity 
+                style={[styles.modalButton, { backgroundColor: theme.accent }]} 
+                onPress={async () => {
+                  setModalVisible(false);
+                  if (modalContent.title === 'Çıkış') {
+                    await logout();
+                  }
+                }}
+              >
+                <Text style={styles.closeButtonText}>{modalContent.title === 'Çıkış' ? 'Çıkış Yap' : 'Tamam'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -399,5 +456,14 @@ const styles = StyleSheet.create({
   donateButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
   donateButtonText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
   progressBarContainer: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  progressBar: { height: '100%', borderRadius: 4 }
+  progressBar: { height: '100%', borderRadius: 4 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', borderRadius: 32, padding: 25, alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+  modalIconContainer: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
+  modalMessage: { fontSize: 16, textAlign: 'center', marginBottom: 25, lineHeight: 22 },
+  modalActions: { flexDirection: 'row', gap: 10, width: '100%' },
+  modalButton: { flex: 1, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center' },
+  closeModal: { position: 'absolute', top: 20, right: 20, padding: 5, zIndex: 10 },
+  closeButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
 });

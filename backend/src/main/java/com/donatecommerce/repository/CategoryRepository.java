@@ -29,4 +29,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     List<Category> findAllActiveOrdered();
     
     boolean existsByName(String name);
+
+    Optional<Category> findByNameIgnoreCase(String name);
 }

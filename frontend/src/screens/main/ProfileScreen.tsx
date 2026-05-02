@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Image, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Image, Modal } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../redux/slices/authSlice';
@@ -21,9 +21,12 @@ const MOCK_CERTIFICATES = [
 ];
 
 export default function ProfileScreen({ navigation }: any) {
-  const { theme } = useTheme();
+  const { theme, themeMode, setThemeMode } = useTheme();
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
+  
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [themeModalVisible, setThemeModalVisible] = useState(false);
   
   // Mock Stats
   const impactPoints = 1250;
@@ -31,136 +34,237 @@ export default function ProfileScreen({ navigation }: any) {
   const volunteerLevel = "Altın Gönüllü";
   const levelProgress = 0.75; // 75%
 
+  const handleLogoutPress = () => {
+    setLogoutModalVisible(true);
+  };
+
+  const confirmLogout = () => {
+    setLogoutModalVisible(false);
+    dispatch(logout());
+  };
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.bg }]} showsVerticalScrollIndicator={false}>
-      {/* Header Profile Section */}
-      <View style={[styles.header, { backgroundColor: theme.surface }]}>
-        <View style={styles.headerTop}>
-          <Text style={[styles.headerTitle, { color: theme.text1 }]}>Profilim</Text>
-          <TouchableOpacity style={styles.settingsBtn}><Text style={{fontSize: 20}}>⚙️</Text></TouchableOpacity>
-        </View>
-
-        <View style={styles.profileInfo}>
-          <View style={styles.avatarContainer}>
-            <View style={[styles.avatar, { backgroundColor: theme.accent + '20' }]}>
-              <Text style={styles.avatarEmoji}>🦁</Text>
-            </View>
-            <TouchableOpacity style={styles.editAvatarBtn}>
-              <Text style={{fontSize: 12}}>✏️</Text>
-            </TouchableOpacity>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.bg }]} showsVerticalScrollIndicator={false}>
+        {/* Header Profile Section */}
+        <View style={[styles.header, { backgroundColor: theme.surface }]}>
+          <View style={styles.headerTop}>
+            <Text style={[styles.headerTitle, { color: theme.text1 }]}>Profilim</Text>
+            <TouchableOpacity style={styles.settingsBtn}><Text style={{fontSize: 20}}>⚙️</Text></TouchableOpacity>
           </View>
-          
-          <View style={styles.userNameContainer}>
-            <Text style={[styles.userName, { color: theme.text1 }]}>{user?.firstName || 'Asel'} {user?.lastName || 'Sunduk'}</Text>
-            <View style={[styles.levelBadge, { backgroundColor: '#F59E0B20' }]}>
-              <Text style={[styles.levelText, { color: '#F59E0B' }]}>✨ {volunteerLevel}</Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Level Progress Bar */}
-        <View style={styles.levelProgressSection}>
-          <View style={styles.levelLabels}>
-            <Text style={[styles.levelLabel, { color: theme.text3 }]}>Level 12</Text>
-            <Text style={[styles.levelLabel, { color: theme.text3 }]}>Next: 250 Puan</Text>
-          </View>
-          <View style={[styles.progressBarBg, { backgroundColor: theme.bg }]}>
-            <View style={[styles.progressBarFill, { width: `${levelProgress * 100}%`, backgroundColor: theme.accent }]} />
-          </View>
-        </View>
-      </View>
-
-      {/* Impact Stats Grid */}
-      <View style={styles.statsGrid}>
-        <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
-          <Text style={styles.statValue}>{impactPoints}</Text>
-          <Text style={[styles.statLabel, { color: theme.text3 }]}>İyilik Puanı</Text>
-          <Text style={styles.statEmoji}>⭐</Text>
-        </View>
-        <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
-          <Text style={styles.statValue}>{livesTouched}</Text>
-          <Text style={[styles.statLabel, { color: theme.text3 }]}>Dokunulan Hayat</Text>
-          <Text style={styles.statEmoji}>🤝</Text>
-        </View>
-      </View>
-
-      {/* Badges Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🏆 Rozetlerin</Text>
-          <TouchableOpacity><Text style={[styles.seeAll, { color: theme.accent }]}>Tümü</Text></TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
-          {MOCK_BADGES.map(badge => (
-            <TouchableOpacity key={badge.id} style={[styles.badgeItem, { backgroundColor: theme.surface }]}>
-              <View style={[styles.badgeIcon, { backgroundColor: badge.color + '15' }]}>
-                <Text style={{fontSize: 24}}>{badge.emoji}</Text>
+          <View style={styles.profileInfo}>
+            <View style={styles.avatarContainer}>
+              <View style={[styles.avatar, { backgroundColor: theme.accent + '20' }]}>
+                <Text style={styles.avatarEmoji}>🦁</Text>
               </View>
-              <Text style={[styles.badgeName, { color: theme.text1 }]} numberOfLines={1}>{badge.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Certificate Gallery */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.text1 }]}>📄 Sertifika Arşivin</Text>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.certScroll}>
-          {MOCK_CERTIFICATES.map(cert => (
-            <TouchableOpacity key={cert.id} style={[styles.certCard, { backgroundColor: theme.surface }]}>
-              <View style={styles.certIcon}><Text style={{fontSize: 32}}>{cert.image}</Text></View>
-              <View style={styles.certInfo}>
-                <Text style={[styles.certTitle, { color: theme.text1 }]} numberOfLines={1}>{cert.title}</Text>
-                <Text style={[styles.certDate, { color: theme.text3 }]}>{cert.date}</Text>
+              <TouchableOpacity style={styles.editAvatarBtn}>
+                <Text style={{fontSize: 12}}>✏️</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.userNameContainer}>
+              <Text style={[styles.userName, { color: theme.text1 }]}>{user?.firstName || 'Asel'} {user?.lastName || 'Sunduk'}</Text>
+              <View style={[styles.levelBadge, { backgroundColor: '#F59E0B20' }]}>
+                <Text style={[styles.levelText, { color: '#F59E0B' }]}>✨ {volunteerLevel}</Text>
               </View>
+            </View>
+          </View>
+
+          {/* Level Progress Bar */}
+          <View style={styles.levelProgressSection}>
+            <View style={styles.levelLabels}>
+              <Text style={[styles.levelLabel, { color: theme.text3 }]}>Level 12</Text>
+              <Text style={[styles.levelLabel, { color: theme.text3 }]}>Next: 250 Puan</Text>
+            </View>
+            <View style={[styles.progressBarBg, { backgroundColor: theme.bg }]}>
+              <View style={[styles.progressBarFill, { width: `${levelProgress * 100}%`, backgroundColor: theme.accent }]} />
+            </View>
+          </View>
+        </View>
+
+        {/* Impact Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
+            <Text style={styles.statValue}>{impactPoints}</Text>
+            <Text style={[styles.statLabel, { color: theme.text3 }]}>İyilik Puanı</Text>
+            <Text style={styles.statEmoji}>⭐</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
+            <Text style={styles.statValue}>{livesTouched}</Text>
+            <Text style={[styles.statLabel, { color: theme.text3 }]}>Dokunulan Hayat</Text>
+            <Text style={styles.statEmoji}>🤝</Text>
+          </View>
+        </View>
+
+        {/* Badges Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🏆 Rozetlerin</Text>
+            <TouchableOpacity><Text style={[styles.seeAll, { color: theme.accent }]}>Tümü</Text></TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
+            {MOCK_BADGES.map(badge => (
+              <TouchableOpacity key={badge.id} style={[styles.badgeItem, { backgroundColor: theme.surface }]}>
+                <View style={[styles.badgeIcon, { backgroundColor: badge.color + '15' }]}>
+                  <Text style={{fontSize: 24}}>{badge.emoji}</Text>
+                </View>
+                <Text style={[styles.badgeName, { color: theme.text1 }]} numberOfLines={1}>{badge.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Certificate Gallery */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text1 }]}>📄 Sertifika Arşivin</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.certScroll}>
+            {MOCK_CERTIFICATES.map(cert => (
+              <TouchableOpacity key={cert.id} style={[styles.certCard, { backgroundColor: theme.surface }]}>
+                <View style={styles.certIcon}><Text style={{fontSize: 32}}>{cert.image}</Text></View>
+                <View style={styles.certInfo}>
+                  <Text style={[styles.certTitle, { color: theme.text1 }]} numberOfLines={1}>{cert.title}</Text>
+                  <Text style={[styles.certDate, { color: theme.text3 }]}>{cert.date}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={[styles.addCertCard, { borderColor: theme.border }]}>
+              <Text style={{fontSize: 24, color: theme.text4}}>+</Text>
+              <Text style={{fontSize: 12, color: theme.text4, marginTop: 5}}>Yeni Bağış</Text>
             </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={[styles.addCertCard, { borderColor: theme.border }]}>
-            <Text style={{fontSize: 24, color: theme.text4}}>+</Text>
-            <Text style={{fontSize: 12, color: theme.text4, marginTop: 5}}>Yeni Bağış</Text>
+          </ScrollView>
+        </View>
+
+        {/* General Settings Menu */}
+        <View style={[styles.menuSection, { backgroundColor: theme.surface }]}>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuIcon}>📦</Text>
+            <Text style={[styles.menuText, { color: theme.text1 }]}>Sipariş Geçmişi</Text>
+            <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </View>
+          <View style={styles.menuDivider} />
+          
+          {/* Görünüm Ayarları Menüsü */}
+          <TouchableOpacity style={styles.menuItem} onPress={() => setThemeModalVisible(true)}>
+            <Text style={styles.menuIcon}>🎨</Text>
+            <Text style={[styles.menuText, { color: theme.text1 }]}>Görünüm Ayarları</Text>
+            <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
 
-      {/* General Settings Menu */}
-      <View style={[styles.menuSection, { backgroundColor: theme.surface }]}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuIcon}>📦</Text>
-          <Text style={[styles.menuText, { color: theme.text1 }]}>Sipariş Geçmişi</Text>
-          <Text style={styles.menuArrow}>→</Text>
-        </TouchableOpacity>
-        <View style={styles.menuDivider} />
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuIcon}>💳</Text>
-          <Text style={[styles.menuText, { color: theme.text1 }]}>Kayıtlı Kartlarım</Text>
-          <Text style={styles.menuArrow}>→</Text>
-        </TouchableOpacity>
-        <View style={styles.menuDivider} />
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuIcon}>📍</Text>
-          <Text style={[styles.menuText, { color: theme.text1 }]}>Adreslerim</Text>
-          <Text style={styles.menuArrow}>→</Text>
-        </TouchableOpacity>
-        <View style={styles.menuDivider} />
-        <TouchableOpacity 
-          style={styles.menuItem} 
-          onPress={() => {
-            Alert.alert('Çıkış', 'Oturumu kapatmak istediğinize emin misiniz?', [
-              { text: 'İptal', style: 'cancel' },
-              { text: 'Çıkış Yap', onPress: () => dispatch(logout()), style: 'destructive' }
-            ]);
-          }}
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuIcon}>💳</Text>
+            <Text style={[styles.menuText, { color: theme.text1 }]}>Kayıtlı Kartlarım</Text>
+            <Text style={styles.menuArrow}>→</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuIcon}>📍</Text>
+            <Text style={[styles.menuText, { color: theme.text1 }]}>Adreslerim</Text>
+            <Text style={styles.menuArrow}>→</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            onPress={handleLogoutPress}
+          >
+            <Text style={styles.menuIcon}>🚪</Text>
+            <Text style={[styles.menuText, { color: theme.error }]}>Oturumu Kapat</Text>
+            <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Tema Seçim Modalı */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={themeModalVisible}
+          onRequestClose={() => setThemeModalVisible(false)}
         >
-          <Text style={styles.menuIcon}>🚪</Text>
-          <Text style={[styles.menuText, { color: theme.error }]}>Oturumu Kapat</Text>
-          <Text style={styles.menuArrow}>→</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <TouchableOpacity 
+              style={styles.closeModal} 
+              onPress={() => setThemeModalVisible(false)}
+            >
+              <Text style={{ fontSize: 20, color: theme.text3 }}>✕</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text1 }]}>🎨 Görünüm</Text>
+              <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 20 }]}>Uygulama temasını dilediğin gibi ayarla</Text>
+              
+              {(['light', 'dark', 'system'] as const).map((mode) => (
+                <TouchableOpacity 
+                  key={mode}
+                  style={[
+                    styles.themeMenuOption, 
+                    { backgroundColor: themeMode === mode ? theme.accent + '15' : 'transparent', borderColor: themeMode === mode ? theme.accent : theme.border }
+                  ]}
+                  onPress={() => {
+                    setThemeMode(mode);
+                    setThemeModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.themeMenuText, { color: themeMode === mode ? theme.accent : theme.text1 }]}>
+                    {mode === 'light' ? '☀️ Açık Tema' : mode === 'dark' ? '🌙 Koyu Tema' : '📱 Sistem Varsayılanı'}
+                  </Text>
+                  {themeMode === mode && <Text style={{color: theme.accent, fontWeight: 'bold'}}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6', marginTop: 10, width: '100%' }]} 
+                onPress={() => setThemeModalVisible(false)}
+              >
+                <Text style={{ color: theme.text1, fontWeight: 'bold' }}>Kapat</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
-      <View style={{ height: 50 }} />
-    </ScrollView>
+        {/* Logout Confirmation Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={logoutModalVisible}
+          onRequestClose={() => setLogoutModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+              <TouchableOpacity 
+                style={styles.closeModal} 
+                onPress={() => setLogoutModalVisible(false)}
+              >
+                <Text style={{ fontSize: 20, color: theme.text3 }}>✕</Text>
+              </TouchableOpacity>
+              <View style={[styles.modalIconContainer, { backgroundColor: theme.error + '15' }]}>
+                <Text style={{ fontSize: 40 }}>🚪</Text>
+              </View>
+              <Text style={[styles.modalTitle, { color: theme.text1 }]}>Çıkış Yap</Text>
+              <Text style={[styles.modalMessage, { color: theme.text2 }]}>Oturumu kapatmak istediğinize emin misiniz?</Text>
+              
+              <View style={styles.modalActions}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]} 
+                  onPress={() => setLogoutModalVisible(false)}
+                >
+                  <Text style={{ color: theme.text2, fontSize: 16, fontWeight: 'bold' }}>İptal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalButton, { backgroundColor: theme.error }]} 
+                  onPress={confirmLogout}
+                >
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Çıkış Yap</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -215,6 +319,35 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 15 },
   menuIcon: { fontSize: 22 },
   menuText: { flex: 1, fontSize: 15, fontWeight: '600' },
-  menuArrow: { fontSize: 18, color: '#D1D5DB' },
-  menuDivider: { height: 1, backgroundColor: '#00000005', marginHorizontal: 18 }
+  menuArrow: { fontSize: 18 },
+  menuDivider: { height: 1, backgroundColor: '#00000005', marginHorizontal: 18 },
+  themeSelector: {
+    flexDirection: 'row',
+    marginRight: 20,
+    marginTop: 10,
+    borderRadius: 15,
+    padding: 5,
+    gap: 5
+  },
+  themeOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: 'bold'
+  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', borderRadius: 32, padding: 25, alignItems: 'center', elevation: 10 },
+  modalIconContainer: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
+  modalMessage: { fontSize: 16, textAlign: 'center', marginBottom: 25, lineHeight: 22 },
+  modalActions: { flexDirection: 'row', gap: 10, width: '100%' },
+  modalButton: { flex: 1, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center' },
+  closeModal: { position: 'absolute', top: 20, right: 20, padding: 5, zIndex: 10 },
+  themeMenuOption: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderRadius: 18, borderWidth: 1, marginBottom: 10 },
+  themeMenuText: { fontSize: 16, fontWeight: '600' }
 });

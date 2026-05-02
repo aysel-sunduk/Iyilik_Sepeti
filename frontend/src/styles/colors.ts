@@ -1,22 +1,8 @@
 export const lightColors = {
-  green: {
-    accent: '#10B981',
-    accentDark: '#059669',
-    accentLight: '#D1FAE5',
-    accentXl: '#ECFDF5',
-    indigo: '#4F46E5',
-    indigoDark: '#3730A3',
-    indigoLight: '#EEF2FF',
-  },
-  trend: {
-    accent: '#4F46E5',
-    accentDark: '#3730A3',
-    accentLight: '#EEF2FF',
-    accentXl: '#F5F3FF',
-    indigo: '#4F46E5',
-    indigoDark: '#3730A3',
-    indigoLight: '#EEF2FF',
-  },
+  accent: '#10B981',
+  accentDark: '#059669',
+  accentLight: '#D1FAE5',
+  accentXl: '#ECFDF5',
   bg: '#F9FAFB',
   surface: '#FFFFFF',
   text1: '#111827',
@@ -27,18 +13,35 @@ export const lightColors = {
   error: '#EF4444',
   success: '#10B981',
   warning: '#F59E0B',
-  indigo: '#4F46E5',      // ← EKLE
-  indigoDark: '#3730A3',  // ← EKLE
-  indigoLight: '#EEF2FF', // ← EKLE
+  indigo: '#4F46E5',
+  indigoDark: '#3730A3',
+  indigoLight: '#EEF2FF',
 };
 
-export const getTheme = (mode: 'green' | 'trend' = 'green') => ({
-  ...lightColors,
-  accent: lightColors[mode]?.accent || lightColors.green.accent,
-  accentDark: lightColors[mode]?.accentDark || lightColors.green.accentDark,
-  accentLight: lightColors[mode]?.accentLight || lightColors.green.accentLight,
-  accentXl: lightColors[mode]?.accentXl || lightColors.green.accentXl,
-  indigo: lightColors[mode]?.indigo || lightColors.green.indigo,
-  indigoDark: lightColors[mode]?.indigoDark || lightColors.green.indigoDark,
-  indigoLight: lightColors[mode]?.indigoLight || lightColors.green.indigoLight,
-});
+export const darkColors = {
+  accent: '#10B981',
+  accentDark: '#059669',
+  accentLight: '#064E3B',
+  accentXl: '#064E3B',
+  bg: '#0F172A', // Derin lacivert
+  surface: '#1E293B',
+  text1: '#F8FAFC',
+  text2: '#E2E8F0',
+  text3: '#94A3B8',
+  text4: '#64748B',
+  border: 'rgba(255,255,255,0.1)',
+  error: '#F87171',
+  success: '#34D399',
+  warning: '#FBBF24',
+  indigo: '#818CF8',
+  indigoDark: '#4F46E5',
+  indigoLight: '#312E81',
+};
+
+export const getTheme = (isDark: boolean = false) => {
+  const colors = isDark ? darkColors : lightColors;
+  return {
+    ...colors,
+    isDark,
+  };
+};

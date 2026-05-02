@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { productService, Category } from '../../services/product/productService';
+import api from '../../services/api/api';
+import { CategoryResponse as Category } from '../../services/api/types';
 
 const categoryConfigs: any = {
   'gıda': { icon: '🍎', color: '#EF4444' },
@@ -9,6 +10,8 @@ const categoryConfigs: any = {
   'hijyen': { icon: '✨', color: '#10B981' },
   'çocuk': { icon: '🧸', color: '#F472B6' },
   'hayvan': { icon: '🐾', color: '#FB923C' },
+  'hayvan hakları': { icon: '🐾', color: '#FB923C' },
+  'eğitim': { icon: '📚', color: '#3B82F6' },
   'default': { icon: '📦', color: '#6B7280' }
 };
 
@@ -20,7 +23,7 @@ export default function CategoriesScreen({ navigation }: any) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await productService.getCategories();
+        const data = await api.categories.getAll();
         setCategories(data);
       } catch (error) {
         console.error('Error fetching categories:', error);

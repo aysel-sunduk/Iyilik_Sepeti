@@ -51,4 +51,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Page<Product> filterByPriceRange(@Param("minPrice") BigDecimal minPrice, 
                                       @Param("maxPrice") BigDecimal maxPrice, 
                                       Pageable pageable);
+
+    boolean existsByName(String name);
 }
