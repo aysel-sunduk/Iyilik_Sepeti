@@ -1,8 +1,8 @@
 package com.donatecommerce.entity;
 
 public enum RefundStatus {
-    pending,
-    approved,
-    rejected,
-    completed
+    PENDING,
+    APPROVED,
+    REJECTED,
+    COMPLETED
 }

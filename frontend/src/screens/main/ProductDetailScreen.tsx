@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   Dimensions,
+  Image,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useDispatch } from 'react-redux';
@@ -52,7 +53,15 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           >
             <Text style={{ fontSize: 24, color: theme.text1 }}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.productEmoji}>{product.imageUrl || '📦'}</Text>
+          {product.imageUrl?.startsWith('http') ? (
+            <Image 
+              source={{ uri: product.imageUrl }} 
+              style={styles.productImage} 
+              resizeMode="contain" 
+            />
+          ) : (
+            <Text style={styles.productEmoji}>{product.imageUrl || '📦'}</Text>
+          )}
           <View style={styles.imageActions}>
             <TouchableOpacity style={styles.iconBtn}><Text style={{fontSize: 20}}>❤️</Text></TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn}><Text style={{fontSize: 20}}>🔗</Text></TouchableOpacity>
@@ -97,7 +106,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           <View style={styles.detailsSection}>
             <Text style={[styles.detailTitle, { color: theme.text1 }]}>📝 Ürün Açıklaması</Text>
             <Text style={[styles.detailText, { color: theme.text2 }]}>
-              {product.description || 'Yüksek kaliteli materyallerden üretilmiş, dayanıklı ve şık tasarıma sahip bu ürün, günlük kullanımınız için idealdir. Tüm sağlık testlerinden geçmiştir.'}
+              {product.description || 'Bu ürün hakkında henüz detaylı bir açıklama girilmemiştir.'}
             </Text>
 
             <Text style={[styles.detailTitle, { color: theme.text1, marginTop: 20 }]}>🔹 Teknik Özellikler</Text>
@@ -157,6 +166,7 @@ const styles = StyleSheet.create({
   imageActions: { position: 'absolute', top: 50, right: 20, gap: 10 },
   iconBtn: { padding: 10, backgroundColor: 'white', borderRadius: 12, elevation: 2 },
   productEmoji: { fontSize: 120 },
+  productImage: { width: '80%', height: '80%' },
   content: { padding: 20, marginTop: -20 },
   infoSection: { marginBottom: 24 },
   productName: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },

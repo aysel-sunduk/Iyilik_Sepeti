@@ -18,6 +18,8 @@ import HomeScreen from '../screens/main/HomeScreen';
 import OrderTrackingScreen from '../screens/main/OrderTrackingScreen';
 import ProductDetailScreen from '../screens/main/ProductDetailScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import AddCardScreen from '../screens/main/AddCardScreen';
+import AddAddressScreen from '../screens/main/AddAddressScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -67,6 +69,8 @@ function MainStack() {
       <Stack.Screen name="DonationTracking" component={DonationTrackingScreen} />
       <Stack.Screen name="DonationFlow" component={DonationFlowScreen} />
       <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+      <Stack.Screen name="AddCard" component={AddCardScreen} />
+      <Stack.Screen name="AddAddress" component={AddAddressScreen} />
     </Stack.Navigator>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Image, Modal } from 'react-native';
+import Svg, { Path, Polyline, Line } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../redux/slices/authSlice';
@@ -20,6 +21,14 @@ const MOCK_CERTIFICATES = [
   { id: 2, date: '05.04.2026', title: 'Sokak Hayvanları', image: '🐾' },
 ];
 
+const LogoutIcon = ({ color }: { color: string }) => (
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <Polyline points="16 17 21 12 16 7" />
+    <Line x1="21" y1="12" x2="9" y2="12" />
+  </Svg>
+);
+
 export default function ProfileScreen({ navigation }: any) {
   const { theme, themeMode, setThemeMode } = useTheme();
   const dispatch = useDispatch();
@@ -27,6 +36,7 @@ export default function ProfileScreen({ navigation }: any) {
   
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [logoutSuccessVisible, setLogoutSuccessVisible] = useState(false);
   
   // Mock Stats
   const impactPoints = 1250;
@@ -40,7 +50,13 @@ export default function ProfileScreen({ navigation }: any) {
 
   const confirmLogout = () => {
     setLogoutModalVisible(false);
-    dispatch(logout());
+    setLogoutSuccessVisible(true);
+    
+    // Show success modal for 1.5 seconds then actually logout
+    setTimeout(() => {
+      setLogoutSuccessVisible(false);
+      dispatch(logout());
+    }, 1500);
   };
 
   return (
@@ -154,23 +170,25 @@ export default function ProfileScreen({ navigation }: any) {
           </TouchableOpacity>
           <View style={styles.menuDivider} />
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AddCard')}>
             <Text style={styles.menuIcon}>💳</Text>
             <Text style={[styles.menuText, { color: theme.text1 }]}>Kayıtlı Kartlarım</Text>
-            <Text style={styles.menuArrow}>→</Text>
+            <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
           </TouchableOpacity>
           <View style={styles.menuDivider} />
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AddAddress')}>
             <Text style={styles.menuIcon}>📍</Text>
             <Text style={[styles.menuText, { color: theme.text1 }]}>Adreslerim</Text>
-            <Text style={styles.menuArrow}>→</Text>
+            <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
           </TouchableOpacity>
           <View style={styles.menuDivider} />
           <TouchableOpacity 
             style={styles.menuItem} 
             onPress={handleLogoutPress}
           >
-            <Text style={styles.menuIcon}>🚪</Text>
+            <View style={styles.menuIconContainer}>
+              <LogoutIcon color={theme.error} />
+            </View>
             <Text style={[styles.menuText, { color: theme.error }]}>Oturumu Kapat</Text>
             <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
           </TouchableOpacity>
@@ -238,10 +256,8 @@ export default function ProfileScreen({ navigation }: any) {
               >
                 <Text style={{ fontSize: 20, color: theme.text3 }}>✕</Text>
               </TouchableOpacity>
-              <View style={[styles.modalIconContainer, { backgroundColor: theme.error + '15' }]}>
-                <Text style={{ fontSize: 40 }}>🚪</Text>
-              </View>
-              <Text style={[styles.modalTitle, { color: theme.text1 }]}>Çıkış Yap</Text>
+              
+              <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 10 }]}>Çıkış Yap</Text>
               <Text style={[styles.modalMessage, { color: theme.text2 }]}>Oturumu kapatmak istediğinize emin misiniz?</Text>
               
               <View style={styles.modalActions}>
@@ -258,6 +274,25 @@ export default function ProfileScreen({ navigation }: any) {
                   <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Çıkış Yap</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Logout Success Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={logoutSuccessVisible}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.surface, paddingVertical: 40 }]}>
+              <View style={[styles.successRing, { borderColor: theme.accent + '20' }]}>
+                <View style={[styles.successCircle, { backgroundColor: theme.accent }]}>
+                  <Text style={{ fontSize: 32, color: 'white' }}>✓</Text>
+                </View>
+              </View>
+              <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 20 }]}>Başarıyla Çıkış Yapıldı</Text>
+              <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, kahraman! ✨</Text>
             </View>
           </View>
         </Modal>
@@ -318,9 +353,12 @@ const styles = StyleSheet.create({
   menuSection: { marginHorizontal: 20, borderRadius: 24, paddingVertical: 10, elevation: 2 },
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 15 },
   menuIcon: { fontSize: 22 },
+  menuIconContainer: { width: 32, alignItems: 'center', justifyContent: 'center' },
   menuText: { flex: 1, fontSize: 15, fontWeight: '600' },
   menuArrow: { fontSize: 18 },
   menuDivider: { height: 1, backgroundColor: '#00000005', marginHorizontal: 18 },
+  successRing: { width: 100, height: 100, borderRadius: 50, borderWidth: 8, justifyContent: 'center', alignItems: 'center' },
+  successCircle: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
   themeSelector: {
     flexDirection: 'row',
     marginRight: 20,

@@ -77,7 +77,6 @@ export const useAuth = () => {
       console.warn('Backend logout failed, but clearing local state:', error.message);
     } finally {
       dispatch(logoutAction());
-      Alert.alert('Başarılı', 'Çıkış yapıldı');
     }
     return true;
   };

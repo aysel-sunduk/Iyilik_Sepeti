@@ -32,7 +32,8 @@ public class Donation {
     private Integer quantity;
     private BigDecimal amount;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private DonationStatus status;
 
     @Column(columnDefinition = "TEXT")
     private String notes;

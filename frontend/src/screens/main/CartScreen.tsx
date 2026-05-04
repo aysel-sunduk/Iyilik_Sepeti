@@ -91,7 +91,11 @@ export default function CartScreen({ navigation }: any) {
                 <Text style={{ color: '#3B82F6', fontWeight: 'bold' }}>{selfItems.length}</Text>
               </View>
             </View>
-            {selfItems.map(item => renderItem(item))}
+            {selfItems.map(item => (
+              <View key={`${item.id}-${item.type}`}>
+                {renderItem(item)}
+              </View>
+            ))}
           </View>
         )}
 
@@ -103,7 +107,11 @@ export default function CartScreen({ navigation }: any) {
                 <Text style={{ color: '#10B981', fontWeight: 'bold' }}>{donationItems.length}</Text>
               </View>
             </View>
-            {donationItems.map(item => renderItem(item))}
+            {donationItems.map(item => (
+              <View key={`${item.id}-${item.type}`}>
+                {renderItem(item)}
+              </View>
+            ))}
           </View>
         )}
       </ScrollView>

@@ -46,6 +46,7 @@ export default function HomeScreen({ navigation }: any) {
   // Custom Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', message: '', icon: '' });
+  const [logoutSuccessVisible, setLogoutSuccessVisible] = useState(false);
 
   const showAlert = (title: string, message: string, icon: string = '✨') => {
     setModalContent({ title, message, icon });
@@ -105,7 +106,7 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleLogout = () => {
-    showAlert('Çıkış', 'Oturumu kapatmak istediğinize emin misiniz?', '🚪');
+    showAlert('Çıkış', 'Oturumu kapatmak istediğinize emin misiniz?', '👋');
   };
 
   const handleAddToCart = (product: Product) => {
@@ -384,13 +385,36 @@ export default function HomeScreen({ navigation }: any) {
                 onPress={async () => {
                   setModalVisible(false);
                   if (modalContent.title === 'Çıkış') {
-                    await logout();
+                    setLogoutSuccessVisible(true);
+                    setTimeout(async () => {
+                      setLogoutSuccessVisible(false);
+                      await logout();
+                    }, 1500);
                   }
                 }}
               >
                 <Text style={styles.closeButtonText}>{modalContent.title === 'Çıkış' ? 'Çıkış Yap' : 'Tamam'}</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Logout Success Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={logoutSuccessVisible}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface, paddingVertical: 40 }]}>
+            <View style={[styles.successRing, { borderColor: theme.accent + '20' }]}>
+              <View style={[styles.successCircle, { backgroundColor: theme.accent }]}>
+                <Text style={{ fontSize: 32, color: 'white' }}>✓</Text>
+              </View>
+            </View>
+            <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 20 }]}>Başarıyla Çıkış Yapıldı</Text>
+            <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, kahraman! ✨</Text>
           </View>
         </View>
       </Modal>
@@ -465,5 +489,7 @@ const styles = StyleSheet.create({
   modalActions: { flexDirection: 'row', gap: 10, width: '100%' },
   modalButton: { flex: 1, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center' },
   closeModal: { position: 'absolute', top: 20, right: 20, padding: 5, zIndex: 10 },
-  closeButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+  closeButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  successRing: { width: 100, height: 100, borderRadius: 50, borderWidth: 8, justifyContent: 'center', alignItems: 'center' },
+  successCircle: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
 });

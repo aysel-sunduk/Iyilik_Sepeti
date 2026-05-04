@@ -116,6 +116,17 @@ export const productApi = {
     apiClient.delete(`/api/products/${id}`),
 };
 
+// Order Endpoints
+export const orderApi = {
+  create: (data: any) => 
+    apiClient.post('/api/orders', data),
+    
+  getMyOrders: (status?: string) => 
+    apiClient.get<any[]>('/api/orders/my-orders', { params: { status } }),
+    
+  getById: (id: string) => 
+    apiClient.get<any>(`/api/orders/${id}`),
+};
 
 // Default export containing all APIs
 const api = {
@@ -123,6 +134,7 @@ const api = {
   campaigns: campaignApi,
   categories: categoryApi,
   products: productApi,
+  orders: orderApi,
 };
 
 export default api;

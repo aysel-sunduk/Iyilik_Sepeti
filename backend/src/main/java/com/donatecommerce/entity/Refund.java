@@ -57,7 +57,7 @@ public class Refund {
         updatedAt = LocalDateTime.now();
 
         if (status == null) {
-            status = RefundStatus.pending;
+            status = RefundStatus.PENDING;
         }
     }
 

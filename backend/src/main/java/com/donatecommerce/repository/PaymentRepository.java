@@ -1,5 +1,17 @@
 package com.donatecommerce.repository;
 
-public interface PaymentRepository {
-}
+import java.util.Optional;
+import java.util.UUID;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.donatecommerce.entity.Payment;
+
+@Repository
+public interface PaymentRepository extends JpaRepository<Payment, UUID> {
+    
+    Optional<Payment> findByTransactionId(String transactionId);
+    
+    Optional<Payment> findByUserIdAndStatus(UUID userId, String status);
+}

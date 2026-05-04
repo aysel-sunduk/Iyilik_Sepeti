@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { clearCart } from '../../redux/slices/cartSlice';
+import api from '../../services/api/api';
 
 export default function CheckoutScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -21,16 +22,42 @@ export default function CheckoutScreen({ navigation }: any) {
   const [isRoundUp, setIsRoundUp] = useState(false);
   const [isGift, setIsGift] = useState(false);
   const [friendName, setFriendName] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const shippingFee = selfItems.length > 0 ? 30 : 0;
   const subTotal = totalAmount + shippingFee;
-  const roundedTotal = Math.ceil(subTotal / 5) * 5; // En yakın 5'e yuvarla
+  const roundedTotal = Math.ceil(subTotal / 5) * 5;
   const roundUpAmount = roundedTotal - subTotal;
   const finalTotal = isRoundUp ? roundedTotal : subTotal;
 
-  const handlePlaceOrder = () => {
-    if (selfItems.length > 0 && (!name || !phone || !address)) {
-      Alert.alert('Eksik Bilgi', 'Lütfen teslimat adresi bilgilerini doldurun.');
+  const validatePhone = (num: string) => {
+    const phoneRegex = /^05\d{9}$/;
+    return phoneRegex.test(num);
+  };
+
+  const handlePlaceOrder = async () => {
+    // 1. Telefon ve Adres Validasyonu
+    if (selfItems.length > 0) {
+      if (!name || !phone || !address) {
+        Alert.alert('Eksik Bilgi', 'Lütfen teslimat adresi bilgilerini tam doldurun.');
+        return;
+      }
+      if (!validatePhone(phone)) {
+        Alert.alert('Hatalı Format', 'Telefon numarası 05 ile başlamalı ve 11 hane olmalıdır. (Örn: 05555555555)');
+        return;
+      }
+    }
+
+    // 2. Kart/Cüzdan Kontrol Simülasyonu
+    if (paymentMethod === 'card') {
+      Alert.alert(
+        'Kayıtlı Kart Bulunamadı',
+        'Ödeme yapabilmek için önce profilinizden bir kart tanımlamanız gerekmektedir.',
+        [
+          { text: 'Profilime Git', onPress: () => navigation.navigate('MainTabs', { screen: 'Profil' }) },
+          { text: 'İptal', style: 'cancel' }
+        ]
+      );
       return;
     }
 
@@ -39,21 +66,46 @@ export default function CheckoutScreen({ navigation }: any) {
       return;
     }
 
-    Alert.alert(
-      'İşlem Başarılı! 🎉',
-      isGift 
-        ? `${friendName} adına hazırlanan dijital sertifika yola çıktı! Bağışlarınız ulaştığında size de bildirim gelecek.`
-        : 'Siparişiniz alındı ve bağışlarınız yola çıktı. İyilik puanlarınız eklendi!',
-      [
-        {
-          text: 'Harika!',
-          onPress: () => {
-            dispatch(clearCart());
-            navigation.replace('Home');
+    try {
+      setLoading(true);
+
+      // 3. Veriyi Backend Formatına Hazırla
+      const orderData = {
+        items: cartItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity
+        })),
+        shippingAddressId: "530817ec-9390-4159-aeca-b08bb4a0fcc9", 
+        paymentMethod: paymentMethod === 'card' ? 'CREDIT_CARD' : 'WALLET',
+        orderType: isGift ? "GIFT" : "PERSONAL",
+        receiverName: isGift ? friendName : name,
+        giftMessage: isGift ? "Senin adına iyilik yaptık! 🎁" : ""
+      };
+
+      // 4. API Çağrısı
+      await api.orders.create(orderData);
+
+      Alert.alert(
+        'İşlem Başarılı! 🎉',
+        isGift 
+          ? `${friendName} adına hazırlanan dijital sertifika yola çıktı!`
+          : 'Siparişiniz başarıyla alındı. Teşekkürler!',
+        [
+          {
+            text: 'Harika!',
+            onPress: () => {
+              dispatch(clearCart());
+              navigation.replace('MainTabs');
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } catch (error: any) {
+      console.error('Sipariş hatası:', error);
+      Alert.alert('Hata', 'Sipariş oluşturulurken bir sorun oluştu. (Cüzdan bakiyesi yetersiz olabilir)');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -146,9 +198,10 @@ export default function CheckoutScreen({ navigation }: any) {
             />
             <TextInput
               style={[styles.input, { borderColor: theme.border, color: theme.text1, marginTop: 10 }]}
-              placeholder="Telefon"
+              placeholder="05555555555"
               placeholderTextColor={theme.text4}
               keyboardType="phone-pad"
+              maxLength={11}
               value={phone}
               onChangeText={setPhone}
             />
@@ -183,8 +236,16 @@ export default function CheckoutScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.orderBtn, { backgroundColor: theme.accent }]} onPress={handlePlaceOrder}>
-          <Text style={styles.orderBtnText}>Ödemeyi Tamamla →</Text>
+        <TouchableOpacity 
+          style={[styles.orderBtn, { backgroundColor: theme.accent, opacity: loading ? 0.7 : 1 }]} 
+          onPress={handlePlaceOrder}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.orderBtnText}>Ödemeyi Tamamla →</Text>
+          )}
         </TouchableOpacity>
         <View style={{ height: 40 }} />
       </ScrollView>

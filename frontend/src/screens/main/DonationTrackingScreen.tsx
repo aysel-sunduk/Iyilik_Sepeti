@@ -2,46 +2,35 @@ import React, { useState } from 'react';
 import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
-const myDonations = [
-  {
-    id: 1,
-    productName: 'Okul Çantası',
-    quantity: 2,
-    date: '15.01.2024',
-    status: 'delivered',
-    proofImage: 'https://picsum.photos/200/300?random=1',
-    deliveryNote: 'Van Deprem Bölgesine ulaştırıldı',
-    beneficiary: 'Ayşe (7 yaş)',
-    donationType: 'anonymous',
-  },
-  {
-    id: 2,
-    productName: 'Battaniye',
-    quantity: 5,
-    date: '10.01.2024',
-    status: 'shipping',
-    proofImage: null,
-    deliveryNote: 'Kargoda, bu hafta ulaşacak',
-    donationType: 'friend',
-    friendName: 'Mehmet Demir',
-    message: 'Doğum günün kutlu olsun kardeşim!',
-  },
-  {
-    id: 3,
-    productName: 'Mama (15kg)',
-    quantity: 3,
-    date: '05.01.2024',
-    status: 'pending',
-    proofImage: null,
-    deliveryNote: 'Hazırlanıyor, hayvan barınağına iletilecek',
-    donationType: 'anonymous',
-  },
-];
+import api from '../../services/api/api';
 
 export default function DonationTrackingScreen() {
   const { theme } = useTheme();
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [donations, setDonations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDonations();
+  }, []);
+
+  const fetchDonations = async () => {
+    try {
+      setLoading(true);
+      const data = await api.orders.getMyOrders();
+      setDonations(data);
+    } catch (error) {
+      console.error('Bağışlar çekilemedi:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openProofModal = (image: string) => {
+    setSelectedProof(image);
+    setModalVisible(true);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -104,54 +93,65 @@ export default function DonationTrackingScreen() {
       </View>
 
       <FlatList
-        data={myDonations}
+        data={donations}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <View style={[styles.card, { backgroundColor: theme.surface }]}>
-            <View style={styles.cardHeader}>
-              <Text style={[styles.productName, { color: theme.text1 }]}>
-                {item.productName} x{item.quantity}
-              </Text>
-              <Text style={[styles.date, { color: theme.text4 }]}>{item.date}</Text>
-            </View>
-
-            {renderTimeline(item.status)}
-
-            {item.donationType === 'friend' && item.friendName && (
-              <View style={[styles.friendBadge, { backgroundColor: theme.accent + '10' }]}>
-                <Text style={[styles.friendText, { color: theme.accent }]}>
-                  🎁 {item.friendName} adına bağışlandı
+        refreshing={loading}
+        onRefresh={fetchDonations}
+        renderItem={({ item }) => {
+          const firstItem = item.items && item.items.length > 0 ? item.items[0] : null;
+          const status = item.status?.toLowerCase();
+          
+          return (
+            <View style={[styles.card, { backgroundColor: theme.surface }]}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.productName, { color: theme.text1 }]}>
+                  {firstItem ? firstItem.productName : 'Bağış Paketi'} {item.items?.length > 1 ? `(+${item.items.length - 1})` : ''} x{firstItem?.quantity || 1}
                 </Text>
-                {item.message && (
-                  <Text style={[styles.messageText, { color: theme.text3 }]}>"{item.message}"</Text>
+                <Text style={[styles.date, { color: theme.text4 }]}>
+                  {new Date(item.createdAt).toLocaleDateString('tr-TR')}
+                </Text>
+              </View>
+
+              {renderTimeline(status)}
+
+              {item.orderType === 'GIFT' && item.receiverName && (
+                <View style={[styles.friendBadge, { backgroundColor: theme.accent + '10' }]}>
+                  <Text style={[styles.friendText, { color: theme.accent }]}>
+                    🎁 {item.receiverName} adına bağışlandı
+                  </Text>
+                  {item.giftMessage && (
+                    <Text style={[styles.messageText, { color: theme.text3 }]}>"{item.giftMessage}"</Text>
+                  )}
+                </View>
+              )}
+
+              <View style={styles.divider} />
+
+              <View style={styles.cardFooter}>
+                <Text style={[styles.note, { color: theme.text2, flex: 1 }]}>
+                  📍 {item.shippingAddress || item.statusDescription}
+                </Text>
+                {item.proofImage && (
+                  <TouchableOpacity 
+                    style={[styles.proofBadge, { backgroundColor: '#10B98115' }]}
+                    onPress={() => openProofModal(item.proofImage!)}
+                  >
+                    <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: 12 }}>📸 Kanıt</Text>
+                  </TouchableOpacity>
                 )}
               </View>
-            )}
 
-            <View style={styles.divider} />
-
-            <View style={styles.cardFooter}>
-              <Text style={[styles.note, { color: theme.text2, flex: 1 }]}>📍 {item.deliveryNote}</Text>
-              {item.proofImage && (
-                <TouchableOpacity 
-                  style={[styles.proofBadge, { backgroundColor: '#10B98115' }]}
-                  onPress={() => openProofModal(item.proofImage!)}
-                >
-                  <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: 12 }}>📸 Kanıt</Text>
-                </TouchableOpacity>
+              {item.beneficiary && status === 'delivered' && (
+                <View style={[styles.beneficiary, { backgroundColor: '#3B82F610' }]}>
+                  <Text style={[styles.beneficiaryText, { color: '#3B82F6' }]}>
+                    🙏 {item.beneficiary} isimli çocuğumuza ulaştı!
+                  </Text>
+                </View>
               )}
             </View>
-
-            {item.beneficiary && item.status === 'delivered' && (
-              <View style={[styles.beneficiary, { backgroundColor: '#3B82F610' }]}>
-                <Text style={[styles.beneficiaryText, { color: '#3B82F6' }]}>
-                  🙏 {item.beneficiary} isimli çocuğumuza ulaştı!
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+          );
+        }}
       />
 
       <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
