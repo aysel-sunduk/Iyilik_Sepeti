@@ -20,12 +20,18 @@ import ProductDetailScreen from '../screens/main/ProductDetailScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import AddCardScreen from '../screens/main/AddCardScreen';
 import AddAddressScreen from '../screens/main/AddAddressScreen';
+import OrdersScreen from '../screens/main/OrdersScreen';
+import AddressesScreen from '../screens/main/AddressesScreen';
+import CardsScreen from '../screens/main/CardsScreen';
+import AllProductsScreen from '../screens/main/AllProductsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
   const { theme } = useTheme();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   
   return (
     <Tab.Navigator
@@ -54,7 +60,14 @@ function TabNavigator() {
       <Tab.Screen name="Ana Sayfa" component={HomeScreen} />
       <Tab.Screen name="Kategoriler" component={CategoriesScreen} />
       <Tab.Screen name="Bağışlarım" component={DonationTrackingScreen} />
-      <Tab.Screen name="Sepetim" component={CartScreen} />
+      <Tab.Screen 
+        name="Sepetim" 
+        component={CartScreen} 
+        options={{ 
+          tabBarBadge: cartItemCount > 0 ? cartItemCount : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#EF4444' }
+        }} 
+      />
       <Tab.Screen name="Profil" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -71,6 +84,11 @@ function MainStack() {
       <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
       <Stack.Screen name="AddCard" component={AddCardScreen} />
       <Stack.Screen name="AddAddress" component={AddAddressScreen} />
+      <Stack.Screen name="Orders" component={OrdersScreen} />
+      <Stack.Screen name="Addresses" component={AddressesScreen} />
+      <Stack.Screen name="Cards" component={CardsScreen} />
+      <Stack.Screen name="AllProducts" component={AllProductsScreen} />
+      <Stack.Screen name="OrderDetail" component={OrderTrackingScreen} />
     </Stack.Navigator>
   );
 }

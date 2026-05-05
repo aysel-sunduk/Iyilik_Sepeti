@@ -128,6 +128,54 @@ export const orderApi = {
     apiClient.get<any>(`/api/orders/${id}`),
 };
 
+// User Endpoints
+export const userApi = {
+  me: () => 
+    apiClient.get<UserResponse>('/api/users/me'),
+    
+  update: (data: Partial<UserResponse>) => 
+    apiClient.put<UserResponse>('/api/users/me', data),
+    
+  getAddresses: () => 
+    apiClient.get<any[]>('/api/users/me/addresses'),
+    
+  addAddress: (data: any) => 
+    apiClient.post<any>('/api/users/me/addresses', data),
+    
+  updateAddress: (id: string, data: any) => 
+    apiClient.put<any>(`/api/users/me/addresses/${id}`, data),
+    
+  deleteAddress: (id: string) => 
+    apiClient.delete(`/api/users/me/addresses/${id}`),
+    
+  setDefaultAddress: (id: string) => 
+    apiClient.patch<any>(`/api/users/me/addresses/${id}/default`, {}),
+
+  getCards: () => 
+    apiClient.get<any[]>('/api/users/me/cards'),
+    
+  addCard: (data: any) => 
+    apiClient.post<any>('/api/users/me/cards', data),
+    
+  deleteCard: (id: string) => 
+    apiClient.delete(`/api/users/me/cards/${id}`),
+};
+
+// Cart Endpoints
+export const cartApi = {
+  get: () => 
+    apiClient.get<any[]>('/api/cart'),
+    
+  update: (data: { productId: string, quantity: number, type: string }) => 
+    apiClient.post<any>('/api/cart', data),
+    
+  remove: (productId: string, type: string) => 
+    apiClient.delete(`/api/cart/${productId}?type=${type}`),
+    
+  clear: () => 
+    apiClient.delete('/api/cart/clear'),
+};
+
 // Default export containing all APIs
 const api = {
   auth: authApi,
@@ -135,6 +183,8 @@ const api = {
   categories: categoryApi,
   products: productApi,
   orders: orderApi,
+  user: userApi,
+  cart: cartApi,
 };
 
 export default api;

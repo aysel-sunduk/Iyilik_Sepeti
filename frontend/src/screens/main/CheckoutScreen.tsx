@@ -11,18 +11,50 @@ export default function CheckoutScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const totalAmount = useSelector((state: RootState) => state.cart.totalAmount);
-  
+
   const selfItems = cartItems.filter(item => item.type === 'self');
   const donationItems = cartItems.filter(item => item.type === 'donation');
 
-  const [address, setAddress] = useState('');
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
-  const [isRoundUp, setIsRoundUp] = useState(false);
-  const [isGift, setIsGift] = useState(false);
-  const [friendName, setFriendName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [cards, setCards] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+   const [loading, setLoading] = useState(false);
+   const [fetchingData, setFetchingData] = useState(true);
+   const [isRoundUp, setIsRoundUp] = useState(false);
+   const [isGift, setIsGift] = useState(false);
+   const [friendName, setFriendName] = useState('');
+   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+
+  React.useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setFetchingData(true);
+      const [addrList, cardList] = await Promise.all([
+        api.user.getAddresses(),
+        api.user.getCards()
+      ]);
+      setAddresses(addrList);
+      setCards(cardList);
+      
+      // Select default or first one
+      if (addrList.length > 0) {
+        const def = addrList.find(a => a.isDefault) || addrList[0];
+        setSelectedAddressId(def.id);
+      }
+      if (cardList.length > 0) {
+        const def = cardList.find(c => c.isDefault) || cardList[0];
+        setSelectedCardId(def.id);
+      }
+    } catch (error) {
+      console.error('Data loading error:', error);
+    } finally {
+      setFetchingData(false);
+    }
+  };
 
   const shippingFee = selfItems.length > 0 ? 30 : 0;
   const subTotal = totalAmount + shippingFee;
@@ -36,25 +68,19 @@ export default function CheckoutScreen({ navigation }: any) {
   };
 
   const handlePlaceOrder = async () => {
-    // 1. Telefon ve Adres Validasyonu
-    if (selfItems.length > 0) {
-      if (!name || !phone || !address) {
-        Alert.alert('Eksik Bilgi', 'Lütfen teslimat adresi bilgilerini tam doldurun.');
-        return;
-      }
-      if (!validatePhone(phone)) {
-        Alert.alert('Hatalı Format', 'Telefon numarası 05 ile başlamalı ve 11 hane olmalıdır. (Örn: 05555555555)');
-        return;
-      }
+    // 1. Adres Validasyonu
+    if (selfItems.length > 0 && !selectedAddressId) {
+      Alert.alert('Eksik Bilgi', 'Lütfen bir teslimat adresi seçin.');
+      return;
     }
 
-    // 2. Kart/Cüzdan Kontrol Simülasyonu
-    if (paymentMethod === 'card') {
+    // 2. Ödeme Validasyonu
+    if (paymentMethod === 'card' && !selectedCardId) {
       Alert.alert(
-        'Kayıtlı Kart Bulunamadı',
-        'Ödeme yapabilmek için önce profilinizden bir kart tanımlamanız gerekmektedir.',
+        'Kart Seçilmedi',
+        'Lütfen bir ödeme kartı seçin veya yeni bir kart ekleyin.',
         [
-          { text: 'Profilime Git', onPress: () => navigation.navigate('MainTabs', { screen: 'Profil' }) },
+          { text: 'Kart Ekle', onPress: () => navigation.navigate('AddCard') },
           { text: 'İptal', style: 'cancel' }
         ]
       );
@@ -75,34 +101,26 @@ export default function CheckoutScreen({ navigation }: any) {
           productId: item.id,
           quantity: item.quantity
         })),
-        shippingAddressId: "530817ec-9390-4159-aeca-b08bb4a0fcc9", 
-        paymentMethod: paymentMethod === 'card' ? 'CREDIT_CARD' : 'WALLET',
+        shippingAddressId: selectedAddressId,
+        paymentMethod: paymentMethod === 'wallet' ? 'WALLET' : 'CREDIT_CARD',
+        paymentCardId: paymentMethod === 'card' ? selectedCardId : null,
         orderType: isGift ? "GIFT" : "PERSONAL",
-        receiverName: isGift ? friendName : name,
-        giftMessage: isGift ? "Senin adına iyilik yaptık! 🎁" : ""
+        receiverName: isGift ? friendName : (addresses.find(a => a.id === selectedAddressId)?.fullName || ""),
+        giftMessage: isGift ? "Senin adına iyilik yaptık! 🎁" : "",
+        roundUpAmount: isRoundUp ? roundUpAmount : 0.0 // Backend'e bağış miktarını gönderiyoruz
       };
 
       // 4. API Çağrısı
       await api.orders.create(orderData);
 
-      Alert.alert(
-        'İşlem Başarılı! 🎉',
-        isGift 
-          ? `${friendName} adına hazırlanan dijital sertifika yola çıktı!`
-          : 'Siparişiniz başarıyla alındı. Teşekkürler!',
-        [
-          {
-            text: 'Harika!',
-            onPress: () => {
-              dispatch(clearCart());
-              navigation.replace('MainTabs');
-            }
-          }
-        ]
-      );
+      Alert.alert('İşlem Başarılı! 🎉', isGift ? 'Hediye bağışın başarıyla iletildi. İyilik paylaştıkça çoğalır! ✨' : 'Siparişin başarıyla alındı. Teşekkürler kahraman! 🌟');
+      dispatch(clearCart());
+      navigation.navigate('MainTabs');
+
     } catch (error: any) {
       console.error('Sipariş hatası:', error);
-      Alert.alert('Hata', 'Sipariş oluşturulurken bir sorun oluştu. (Cüzdan bakiyesi yetersiz olabilir)');
+      const errorMsg = error.message || 'Sipariş oluşturulurken bir sorun oluştu.';
+      Alert.alert('Hata', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -111,7 +129,7 @@ export default function CheckoutScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <View style={[styles.header, { backgroundColor: theme.surface }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={{fontSize: 24, color: theme.text1}}>←</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={{ fontSize: 24, color: theme.text1 }}>←</Text></TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text1 }]}>Güvenli Ödeme</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -137,15 +155,15 @@ export default function CheckoutScreen({ navigation }: any) {
             </View>
           )}
           <View style={styles.divider} />
-          
+
           {/* İyilik Dokunuşu Section */}
           <View style={[styles.roundUpContainer, { backgroundColor: theme.accent + '08', borderColor: theme.accent + '30' }]}>
             <View style={styles.roundUpRow}>
-              <View style={{flex: 1}}>
-                <Text style={[styles.roundUpTitle, { color: theme.text1 }]}>Küsuratı Tamamla 🪙</Text>
-                <Text style={[styles.roundUpSub, { color: theme.text3 }]}>₺{roundUpAmount.toFixed(2)} farkı sokak hayvanları fonuna aktar.</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.roundUpTitle, { color: theme.text1 }]}>Küsuratı İyiliğe Biriktir 🪙</Text>
+                <Text style={[styles.roundUpSub, { color: theme.text3 }]}>₺{roundUpAmount.toFixed(2)} farkı iyilik cüzdanına ekle, sonra bağışla.</Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setIsRoundUp(!isRoundUp)}
                 style={[styles.toggle, { backgroundColor: isRoundUp ? theme.accent : '#D1D5DB' }]}
               >
@@ -155,11 +173,11 @@ export default function CheckoutScreen({ navigation }: any) {
 
             {donationItems.length > 0 && (
               <View style={[styles.roundUpRow, { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: theme.border + '30' }]}>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.roundUpTitle, { color: theme.text1 }]}>Arkadaşına Hediye Et 🎁</Text>
                   <Text style={[styles.roundUpSub, { color: theme.text3 }]}>Onun adına dijital sertifika hazırlayalım.</Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setIsGift(!isGift)}
                   style={[styles.toggle, { backgroundColor: isGift ? theme.accent : '#D1D5DB' }]}
                 >
@@ -185,59 +203,93 @@ export default function CheckoutScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Delivery Address (Only if self items exist) */}
+        {/* Delivery Address Section */}
         {selfItems.length > 0 && (
           <View style={[styles.card, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.cardTitle, { color: theme.text1 }]}>📍 Teslimat Adresi</Text>
-            <TextInput
-              style={[styles.input, { borderColor: theme.border, color: theme.text1 }]}
-              placeholder="Ad Soyad"
-              placeholderTextColor={theme.text4}
-              value={name}
-              onChangeText={setName}
-            />
-            <TextInput
-              style={[styles.input, { borderColor: theme.border, color: theme.text1, marginTop: 10 }]}
-              placeholder="05555555555"
-              placeholderTextColor={theme.text4}
-              keyboardType="phone-pad"
-              maxLength={11}
-              value={phone}
-              onChangeText={setPhone}
-            />
-            <TextInput
-              style={[styles.textArea, { borderColor: theme.border, color: theme.text1, marginTop: 10 }]}
-              placeholder="Tam Adresiniz..."
-              placeholderTextColor={theme.text4}
-              multiline
-              numberOfLines={3}
-              value={address}
-              onChangeText={setAddress}
-            />
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardTitle, { color: theme.text1 }]}>📍 Teslimat Adresi</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('AddAddress')}>
+                <Text style={{ color: theme.accent, fontWeight: 'bold' }}>+ Yeni Ekle</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {fetchingData ? (
+              <ActivityIndicator color={theme.accent} />
+            ) : addresses.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+                {addresses.map(addr => (
+                  <TouchableOpacity 
+                    key={addr.id}
+                    onPress={() => setSelectedAddressId(addr.id)}
+                    style={[
+                      styles.addressOption, 
+                      { borderColor: selectedAddressId === addr.id ? theme.accent : theme.border }
+                    ]}
+                  >
+                    <Text style={[styles.addressTitle, { color: theme.text1 }]}>{addr.title}</Text>
+                    <Text style={[styles.addressText, { color: theme.text3 }]} numberOfLines={2}>
+                      {addr.addressLine}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={{ color: theme.text3, marginTop: 10 }}>Henüz bir adres eklemediniz.</Text>
+            )}
           </View>
         )}
 
         {/* Payment Methods */}
         <View style={[styles.card, { backgroundColor: theme.surface }]}>
           <Text style={[styles.cardTitle, { color: theme.text1 }]}>💳 Ödeme Yöntemi</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.paymentOption, paymentMethod === 'card' && { borderColor: theme.accent, backgroundColor: theme.accent + '05' }]}
             onPress={() => setPaymentMethod('card')}
           >
-            <Text style={{fontSize: 24}}>💳</Text>
-            <Text style={[styles.paymentText, { color: theme.text1 }]}>Kredi / Banka Kartı</Text>
+            <Text style={{ fontSize: 24 }}>💳</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.paymentText, { color: theme.text1 }]}>Kredi / Banka Kartı</Text>
+              {paymentMethod === 'card' && cards.length > 0 && (
+                <Text style={{ fontSize: 12, color: theme.text3 }}>{cards.find(c => c.id === selectedCardId)?.cardAlias || 'Kart Seçin'}</Text>
+              )}
+            </View>
           </TouchableOpacity>
-          <TouchableOpacity 
+
+          {paymentMethod === 'card' && cards.length > 0 && (
+             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15, paddingLeft: 10 }}>
+               {cards.map(card => (
+                 <TouchableOpacity 
+                   key={card.id}
+                   onPress={() => setSelectedCardId(card.id)}
+                   style={[
+                     styles.cardOption,
+                     { borderColor: selectedCardId === card.id ? theme.accent : theme.border }
+                   ]}
+                 >
+                   <Text style={{ fontSize: 12, color: theme.text1, fontWeight: 'bold' }}>{card.cardAlias}</Text>
+                   <Text style={{ fontSize: 10, color: theme.text3 }}>**** {card.cardNumberLastFour}</Text>
+                 </TouchableOpacity>
+               ))}
+               <TouchableOpacity 
+                  onPress={() => navigation.navigate('AddCard')}
+                  style={[styles.cardOption, { borderStyle: 'dashed', borderColor: theme.border }]}
+               >
+                 <Text style={{ fontSize: 18, color: theme.text4 }}>+</Text>
+               </TouchableOpacity>
+             </ScrollView>
+          )}
+
+          <TouchableOpacity
             style={[styles.paymentOption, paymentMethod === 'wallet' && { borderColor: theme.accent, backgroundColor: theme.accent + '05' }]}
             onPress={() => setPaymentMethod('wallet')}
           >
-            <Text style={{fontSize: 24}}>💰</Text>
+            <Text style={{ fontSize: 24 }}>💰</Text>
             <Text style={[styles.paymentText, { color: theme.text1 }]}>İyilik Cüzdanım</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.orderBtn, { backgroundColor: theme.accent, opacity: loading ? 0.7 : 1 }]} 
+        <TouchableOpacity
+          style={[styles.orderBtn, { backgroundColor: theme.accent, opacity: loading ? 0.7 : 1 }]}
           onPress={handlePlaceOrder}
           disabled={loading}
         >
@@ -259,7 +311,12 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   scrollContent: { padding: 20 },
   card: { padding: 20, borderRadius: 24, marginBottom: 20, elevation: 2 },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 15 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  cardTitle: { fontSize: 16, fontWeight: 'bold' },
+  addressOption: { width: 150, padding: 15, borderRadius: 16, borderWidth: 2, marginRight: 12 },
+  addressTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 5 },
+  addressText: { fontSize: 12, lineHeight: 16 },
+  cardOption: { padding: 12, borderRadius: 12, borderWidth: 2, marginRight: 10, minWidth: 100, alignItems: 'center', justifyContent: 'center' },
   summaryGroup: { marginBottom: 12 },
   groupLabel: { fontSize: 12, fontWeight: 'bold', marginBottom: 5 },
   summaryItem: { fontSize: 14, marginLeft: 10, marginBottom: 2 },

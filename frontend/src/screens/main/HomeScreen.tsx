@@ -276,7 +276,7 @@ export default function HomeScreen({ navigation }: any) {
           {/* Popular Products Section */}
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🔥 Öne Çıkan Ürünler</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Kategoriler')}>
+            <TouchableOpacity onPress={() => navigation.navigate('AllProducts')}>
               <Text style={[styles.seeAll, { color: theme.accent }]}>Tümü →</Text>
             </TouchableOpacity>
           </View>

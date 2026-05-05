@@ -51,6 +51,9 @@ public class Order {
     @Column(nullable = false, precision = 38, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(precision = 38, scale = 2)
+    private BigDecimal roundUpAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private OrderStatus status;

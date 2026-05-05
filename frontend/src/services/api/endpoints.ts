@@ -46,11 +46,11 @@ class AuthEndpoints {
   }
 
   async getCurrentUser(): Promise<UserResponse> {
-    return apiClient.get<UserResponse>('/users/me');
+    return apiClient.get<UserResponse>('/api/users/me');
   }
 
   async updateProfile(data: Partial<UserResponse>): Promise<UserResponse> {
-    return apiClient.put<UserResponse>('/users/me', data);
+    return apiClient.put<UserResponse>('/api/users/me', data);
   }
 }
 

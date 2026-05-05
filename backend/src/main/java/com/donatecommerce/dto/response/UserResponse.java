@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -26,6 +27,7 @@ public class UserResponse {
     private Boolean phoneVerified;
     private String role;
     private Boolean isActive;
+    private BigDecimal walletBalance;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
 }

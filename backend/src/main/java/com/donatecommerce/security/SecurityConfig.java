@@ -44,8 +44,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v3/api-docs/**", "/api/swagger-ui/**", "/api/swagger-ui.html").permitAll()
                         .requestMatchers("/error", "/api/error").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**", "/api/categories/**", "/api/campaigns/**").permitAll()
+                        .requestMatchers("/api/orders/**").authenticated()
+                        .requestMatchers("/api/users/me").authenticated() // Tam eşleşme eklendi
+                        .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/admin/import/**").hasRole("ADMIN")
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/api/**", "/users/**", "/cart/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)

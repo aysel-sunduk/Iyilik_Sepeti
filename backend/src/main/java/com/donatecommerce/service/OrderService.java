@@ -85,6 +85,7 @@ public class OrderService {
                         " (Mevcut: " + product.getStock() + ")");
             }
             
+            boolean isDonation = product.getCampaign() != null || "BAĞIŞ".equalsIgnoreCase(product.getCategory());
             BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
             totalAmount = totalAmount.add(subtotal);
             
@@ -93,21 +94,49 @@ public class OrderService {
                     .quantity(itemRequest.getQuantity())
                     .unitPrice(product.getPrice())
                     .subtotal(subtotal)
-                    .isDonation(false)
+                    .isDonation(isDonation)
                     .build();
             
             orderItems.add(orderItem);
             
-            // Stok güncelle
-            product.setStock(product.getStock() - itemRequest.getQuantity());
+            // Stok ve Bağış Sayacı Güncelle
+            if (isDonation) {
+                int currentDonations = product.getDonationCount() != null ? product.getDonationCount() : 0;
+                product.setDonationCount(currentDonations + itemRequest.getQuantity());
+            } else {
+                product.setStock(product.getStock() - itemRequest.getQuantity());
+            }
             productRepository.save(product);
         }
         
+        // Yuvarlama Tutarı Ekle (İyilik Cüzdanına Biriktirme)
+        BigDecimal roundUpAmount = request.getRoundUpAmount() != null ? 
+                BigDecimal.valueOf(request.getRoundUpAmount()) : BigDecimal.ZERO;
+        
+        BigDecimal finalPaymentAmount = totalAmount.add(roundUpAmount);
+        
+        // Ödeme Kontrolü ve Cüzdan İşlemi
+        if ("WALLET".equalsIgnoreCase(request.getPaymentMethod())) {
+            if (buyer.getWalletBalance() == null || buyer.getWalletBalance().compareTo(finalPaymentAmount) < 0) {
+                throw new BadRequestException("Cüzdan bakiyeniz yetersiz. Mevcut bakiye: ₺" + 
+                        (buyer.getWalletBalance() != null ? buyer.getWalletBalance() : "0.00"));
+            }
+            // Bakiyeden düş (Toplam ödemeyi düşüyoruz, ama birazdan yuvarlamayı geri ekleyeceğiz)
+            buyer.setWalletBalance(buyer.getWalletBalance().subtract(finalPaymentAmount));
+        }
+
+        // Yuvarlama miktarını kullanıcının cüzdanına "İyilik Birikimi" olarak geri ekle
+        if (roundUpAmount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal currentBalance = buyer.getWalletBalance() != null ? buyer.getWalletBalance() : BigDecimal.ZERO;
+            buyer.setWalletBalance(currentBalance.add(roundUpAmount));
+        }
+        userRepository.save(buyer);
+
         // Ödeme kaydı oluştur
         Payment payment = Payment.builder()
                 .user(buyer)
-                .amount(totalAmount)
-                .paymentMethod(request.getPaymentMethod().toLowerCase())
+                .amount(finalPaymentAmount)
+                .paymentMethod(request.getPaymentMethod().toUpperCase())
                 .transactionId("TRX-" + System.currentTimeMillis())
                 .status("pending")
                 .build();
@@ -118,8 +147,9 @@ public class OrderService {
                 .buyer(buyer)
                 .payment(payment)
                 .shippingAddress(shippingAddress)
-                .totalAmount(totalAmount)
-                .status(OrderStatus.PENDING)
+                .totalAmount(finalPaymentAmount)
+                .roundUpAmount(roundUpAmount)
+                .status(OrderStatus.PROCESSING) // Ödeme başarılı simülasyonu olduğu için direkt hazırlamaya alıyoruz
                 .isDeleted(false)
                 .build();
         
@@ -140,7 +170,7 @@ public class OrderService {
         }
         
         // Ödeme başarılı simülasyonu
-        payment.setStatus("SUCCESS");
+        payment.setStatus("success");
         paymentRepository.save(payment);
         
         return mapToOrderResponse(order);

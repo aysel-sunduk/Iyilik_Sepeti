@@ -45,15 +45,23 @@ export default function AddCardScreen({ navigation }: any) {
 
     try {
       setLoading(true);
-      // Backend endpoint'in hazır olduğunda burayı bağlayacağız
-      // await api.user.addCard({ cardHolder, cardNumber, expiryDate, cvv, alias });
       
-      setTimeout(() => {
-        setLoading(false);
-        Alert.alert('Başarılı', 'Kartınız güvenli bir şekilde kaydedildi.', [
-          { text: 'Tamam', onPress: () => navigation.goBack() }
-        ]);
-      }, 1500);
+      const cardData = {
+        cardHolderName: cardHolder,
+        cardNumber: cardNumber.replace(/\s/g, ''),
+        cardAlias: alias || 'Kartım',
+        expiryMonth: expiryDate.split('/')[0],
+        expiryYear: expiryDate.split('/')[1],
+        cvv: cvv,
+        isDefault: true
+      };
+
+      await api.user.addCard(cardData);
+      
+      setLoading(false);
+      Alert.alert('Başarılı', 'Kartınız güvenli bir şekilde kaydedildi.', [
+        { text: 'Tamam', onPress: () => navigation.goBack() }
+      ]);
     } catch (error) {
       setLoading(false);
       Alert.alert('Hata', 'Kart kaydedilirken bir sorun oluştu.');

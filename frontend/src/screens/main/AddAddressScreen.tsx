@@ -13,18 +13,22 @@ import {
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api/api';
+import SuccessModal from '../../components/common/SuccessModal';
 
-export default function AddAddressScreen({ navigation }: any) {
+export default function AddAddressScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
   
-  const [title, setTitle] = useState(''); // Ev, İş vb.
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [city, setCity] = useState('');
-  const [district, setDistrict] = useState('');
-  const [neighborhood, setNeighborhood] = useState('');
-  const [fullAddress, setFullAddress] = useState('');
+  const editAddress = route.params?.address;
+  
+  const [title, setTitle] = useState(editAddress?.title || '');
+  const [fullName, setFullName] = useState(editAddress?.fullName || '');
+  const [phone, setPhone] = useState(editAddress?.phone || '');
+  const [city, setCity] = useState(editAddress?.city || '');
+  const [district, setDistrict] = useState(editAddress?.district || '');
+  const [neighborhood, setNeighborhood] = useState(editAddress?.neighborhood || '');
+  const [fullAddress, setFullAddress] = useState(editAddress?.addressLine || '');
 
   const validatePhone = (num: string) => {
     const phoneRegex = /^05\d{9}$/;
@@ -53,25 +57,26 @@ export default function AddAddressScreen({ navigation }: any) {
     try {
       setLoading(true);
       
-      // Backend'de AddressService zaten var, oraya bağlanabilir
+      // Backend bağlantısı
       const addressData = {
         title,
-        fullName,
+        fullName, // Backend'de title/fullName ayrımı olabilir, mapping gerekebilir
         phone,
         city,
         district,
         neighborhood,
-        fullAddress,
+        addressLine: `${neighborhood} ${fullAddress}`, // Backend'in beklediği format
         isDefault: true
       };
 
-      // Simülasyon (Backend hazır olduğunda api.user.addAddress(addressData) kullanılacak)
-      setTimeout(() => {
-        setLoading(false);
-        Alert.alert('Başarılı', 'Adresiniz başarıyla kaydedildi.', [
-          { text: 'Tamam', onPress: () => navigation.goBack() }
-        ]);
-      }, 1200);
+      if (editAddress) {
+        await api.user.updateAddress(editAddress.id, addressData);
+      } else {
+        await api.user.addAddress(addressData);
+      }
+      
+      setLoading(false);
+      setSuccessVisible(true);
 
     } catch (error) {
       setLoading(false);
@@ -175,6 +180,15 @@ export default function AddAddressScreen({ navigation }: any) {
         </View>
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <SuccessModal 
+        visible={successVisible} 
+        onClose={() => {
+          setSuccessVisible(false);
+          navigation.goBack();
+        }}
+        message={editAddress ? "Adresiniz başarıyla güncellendi." : "Adresiniz başarıyla kaydedildi. Artık alışverişlerinizde bu adresi kullanabilirsiniz."}
+      />
     </KeyboardAvoidingView>
   );
 }

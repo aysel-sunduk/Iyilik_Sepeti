@@ -10,16 +10,18 @@ import {
   Image,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { useDispatch } from 'react-redux';
-import { addToCart } from '../../redux/slices/cartSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, syncCartItem } from '../../redux/slices/cartSlice';
+import { AppDispatch, RootState } from '../../redux/store';
 
 const { width } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ route, navigation }: any) {
   const { theme } = useTheme();
-  const dispatch = useDispatch();
-  const { product } = route.params;
-  const [quantity, setQuantity] = useState(1);
+  const dispatch = useDispatch<AppDispatch>();
+   const { product } = route.params;
+   const cartItems = useSelector((state: RootState) => state.cart.items);
+   const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = (type: 'self' | 'donation') => {
     dispatch(addToCart({
@@ -29,6 +31,17 @@ export default function ProductDetailScreen({ route, navigation }: any) {
       image: product.imageUrl || '📦',
       seller: product.category,
       quantity: quantity,
+      type: type
+    }));
+
+    // Mevcut miktarı Redux'tan buluyoruz
+    const existingItem = cartItems.find(item => item.id === product.id && item.type === type);
+    const newTotalQuantity = (existingItem?.quantity || 0) + quantity;
+
+    // Backend Senkronizasyonu (Veritabanında kalıcı olması için TOPLAM miktarı gönderiyoruz)
+    dispatch(syncCartItem({
+      id: product.id,
+      quantity: newTotalQuantity,
       type: type
     }));
     

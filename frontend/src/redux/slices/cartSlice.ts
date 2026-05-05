@@ -1,5 +1,5 @@
-// src/redux/slices/cartSlice.ts
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import api from '../../services/api/api';
 
 export interface CartItem {
   id: number | string;
@@ -14,12 +14,44 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   totalAmount: number;
+  loading: boolean;
 }
 
 const initialState: CartState = {
   items: [],
   totalAmount: 0,
+  loading: false,
 };
+
+// Async Thunk to fetch cart from backend
+export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
+  const data = await api.cart.get();
+  return data.map((item: any) => ({
+    id: item.productId,
+    name: item.name,
+    price: item.price,
+    image: item.imageUrl,
+    seller: 'İyilik Sepeti', // Default
+    quantity: item.quantity,
+    type: item.type,
+  }));
+});
+
+// Async Thunk to sync item change with backend
+export const syncCartItem = createAsyncThunk(
+  'cart/syncItem',
+  async (item: { id: string | number; quantity: number; type: string }) => {
+    if (item.quantity > 0) {
+      await api.cart.update({
+        productId: item.id.toString(),
+        quantity: item.quantity,
+        type: item.type
+      });
+    } else {
+      await api.cart.remove(item.id.toString(), item.type);
+    }
+  }
+);
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -55,6 +87,20 @@ const cartSlice = createSlice({
       state.items = [];
       state.totalAmount = 0;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCart.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchCart.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+        state.totalAmount = action.payload.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+      })
+      .addCase(fetchCart.rejected, (state) => {
+        state.loading = false;
+      });
   },
 });
 

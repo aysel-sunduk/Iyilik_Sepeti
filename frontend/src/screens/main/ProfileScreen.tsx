@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../redux/slices/authSlice';
 import { RootState } from '../../redux/store';
+import { useAuth } from '../../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -32,7 +34,13 @@ const LogoutIcon = ({ color }: { color: string }) => (
 export default function ProfileScreen({ navigation }: any) {
   const { theme, themeMode, setThemeMode } = useTheme();
   const dispatch = useDispatch();
-  const user = useSelector((state: RootState) => state.auth.user);
+  const { user, refreshUser } = useAuth();
+  
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshUser();
+    }, [])
+  );
   
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
@@ -102,9 +110,9 @@ export default function ProfileScreen({ navigation }: any) {
         {/* Impact Stats Grid */}
         <View style={styles.statsGrid}>
           <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
-            <Text style={styles.statValue}>{impactPoints}</Text>
-            <Text style={[styles.statLabel, { color: theme.text3 }]}>İyilik Puanı</Text>
-            <Text style={styles.statEmoji}>⭐</Text>
+            <Text style={styles.statValue}>₺{user?.walletBalance || 0}</Text>
+            <Text style={[styles.statLabel, { color: theme.text3 }]}>Cüzdan Bakiyesi</Text>
+            <Text style={styles.statEmoji}>💰</Text>
           </View>
           <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
             <Text style={styles.statValue}>{livesTouched}</Text>
@@ -153,13 +161,22 @@ export default function ProfileScreen({ navigation }: any) {
           </ScrollView>
         </View>
 
-        {/* General Settings Menu */}
-        <View style={[styles.menuSection, { backgroundColor: theme.surface }]}>
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.menuIcon}>📦</Text>
-            <Text style={[styles.menuText, { color: theme.text1 }]}>Sipariş Geçmişi</Text>
-            <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
+        {/* Ana İşlemler Grubu */}
+        <View style={[styles.menuSection, { backgroundColor: theme.surface, marginTop: 10 }]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { backgroundColor: theme.accent + '10', margin: 10, borderRadius: 15 }]} 
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <View style={[styles.menuIconContainer, { backgroundColor: theme.accent, width: 45, height: 45, borderRadius: 12 }]}>
+              <Text style={{fontSize: 24}}>📦</Text>
+            </View>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.menuText, { color: theme.text1, fontSize: 17 }]}>Tüm Siparişlerim</Text>
+              <Text style={{ color: theme.text3, fontSize: 12 }}>Sipariş durumunu ve detayları gör</Text>
+            </View>
+            <Text style={[styles.menuArrow, { color: theme.accent }]}>→</Text>
           </TouchableOpacity>
+          
           <View style={styles.menuDivider} />
           
           {/* Görünüm Ayarları Menüsü */}
@@ -170,13 +187,13 @@ export default function ProfileScreen({ navigation }: any) {
           </TouchableOpacity>
           <View style={styles.menuDivider} />
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AddCard')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Cards')}>
             <Text style={styles.menuIcon}>💳</Text>
             <Text style={[styles.menuText, { color: theme.text1 }]}>Kayıtlı Kartlarım</Text>
             <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>
           </TouchableOpacity>
           <View style={styles.menuDivider} />
-          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AddAddress')}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Addresses')}>
             <Text style={styles.menuIcon}>📍</Text>
             <Text style={[styles.menuText, { color: theme.text1 }]}>Adreslerim</Text>
             <Text style={[styles.menuArrow, { color: theme.text4 }]}>→</Text>

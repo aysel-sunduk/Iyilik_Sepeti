@@ -2,12 +2,12 @@ import React from 'react';
 import { Alert, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
-import { clearCart, removeFromCart, updateQuantity } from '../../redux/slices/cartSlice';
-import { RootState } from '../../redux/store';
+import { clearCart, removeFromCart, updateQuantity, syncCartItem } from '../../redux/slices/cartSlice';
+import { RootState, AppDispatch } from '../../redux/store';
 
 export default function CartScreen({ navigation }: any) {
   const { theme } = useTheme();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const totalAmount = useSelector((state: RootState) => state.cart.totalAmount);
 
@@ -17,7 +17,13 @@ export default function CartScreen({ navigation }: any) {
   const handleRemove = (id: number | string, type: 'self' | 'donation') => {
     Alert.alert('Ürün Kaldır', 'Ürünü sepetten kaldırmak istediğinize emin misiniz?', [
       { text: 'İptal', style: 'cancel' },
-      { text: 'Kaldır', onPress: () => dispatch(removeFromCart({ id, type })) }
+      { 
+        text: 'Kaldır', 
+        onPress: () => {
+          dispatch(removeFromCart({ id, type }));
+          dispatch(syncCartItem({ id, quantity: 0, type }));
+        } 
+      }
     ]);
   };
 
@@ -43,11 +49,19 @@ export default function CartScreen({ navigation }: any) {
       </View>
       <View style={styles.itemActions}>
         <View style={styles.quantityContainer}>
-          <TouchableOpacity onPress={() => dispatch(updateQuantity({ id: item.id, type: item.type, quantity: Math.max(1, item.quantity - 1) }))}>
+          <TouchableOpacity onPress={() => {
+            const newQty = Math.max(1, item.quantity - 1);
+            dispatch(updateQuantity({ id: item.id, type: item.type, quantity: newQty }));
+            dispatch(syncCartItem({ id: item.id, type: item.type, quantity: newQty }));
+          }}>
             <Text style={[styles.quantityBtn, { color: theme.accent }]}>−</Text>
           </TouchableOpacity>
           <Text style={[styles.quantity, { color: theme.text1 }]}>{item.quantity}</Text>
-          <TouchableOpacity onPress={() => dispatch(updateQuantity({ id: item.id, type: item.type, quantity: item.quantity + 1 }))}>
+          <TouchableOpacity onPress={() => {
+            const newQty = item.quantity + 1;
+            dispatch(updateQuantity({ id: item.id, type: item.type, quantity: newQty }));
+            dispatch(syncCartItem({ id: item.id, type: item.type, quantity: newQty }));
+          }}>
             <Text style={[styles.quantityBtn, { color: theme.accent }]}>+</Text>
           </TouchableOpacity>
         </View>
@@ -63,7 +77,7 @@ export default function CartScreen({ navigation }: any) {
       <View style={[styles.emptyContainer, { backgroundColor: theme.bg }]}>
         <Text style={{ fontSize: 80, marginBottom: 20 }}>🛒</Text>
         <Text style={[styles.emptyText, { color: theme.text2, fontWeight: 'bold', fontSize: 20 }]}>Sepetiniz boş</Text>
-        <TouchableOpacity style={[styles.shopBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={[styles.shopBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('MainTabs')}>
           <Text style={styles.shopBtnText}>Alışverişe Başla</Text>
         </TouchableOpacity>
       </View>

@@ -32,4 +32,5 @@ public class CreateOrderRequest {
     
     private String receiverName;  // GIFT için zorunlu
     private String giftMessage;   // GIFT için opsiyonel
+    private Double roundUpAmount; // Yuvarlama farkı
 }

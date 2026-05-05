@@ -1,5 +1,6 @@
 package com.donatecommerce.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -60,6 +61,9 @@ public class User {
 
     private Boolean isActive;
     private Boolean isDeleted;
+    
+    @Builder.Default
+    private BigDecimal walletBalance = BigDecimal.ZERO;
     
     // Manuel getter - OrderService'de getFullName() diye çağırdığın için
     public String getFullName() {

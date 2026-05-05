@@ -89,6 +89,7 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
+  walletBalance: number;
 }
 
 export interface UserResponse extends User {}
