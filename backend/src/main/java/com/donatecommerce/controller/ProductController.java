@@ -30,22 +30,25 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "*")
+
 @Tag(name = "Ürünler", description = "Ürün yönetimi API'leri")
 public class ProductController {
-    
+
     @Autowired
     private ProductService productService;
-    
+
     @GetMapping
     @Operation(summary = "Tüm ürünleri getir")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(HttpServletRequest request) {
         List<ProductResponse> products = productService.getAllProducts();
         return ResponseEntity.ok(ApiResponse.success(products, "Ürünler başarıyla getirildi"));
     }
-    
+
     @GetMapping("/filter")
     @Operation(summary = "Filtreli ürünleri getir", description = "Kategori, bağış ürünü, fiyat aralığı gibi filtrelerle ürünleri listeler")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getProductsWithFilters(
@@ -61,31 +64,33 @@ public class ProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection,
             HttpServletRequest request) {
-        
+
         ProductFilterRequest filterRequest = new ProductFilterRequest();
         filterRequest.setCategory(category);
         filterRequest.setIsDonationProduct(isDonationProduct);
         filterRequest.setSearch(search);
-        if (minPrice != null) filterRequest.setMinPrice(java.math.BigDecimal.valueOf(minPrice));
-        if (maxPrice != null) filterRequest.setMaxPrice(java.math.BigDecimal.valueOf(maxPrice));
+        if (minPrice != null)
+            filterRequest.setMinPrice(java.math.BigDecimal.valueOf(minPrice));
+        if (maxPrice != null)
+            filterRequest.setMaxPrice(java.math.BigDecimal.valueOf(maxPrice));
         filterRequest.setMinDonationCount(minDonationCount);
         filterRequest.setInStock(inStock);
         filterRequest.setPage(page);
         filterRequest.setSize(size);
         filterRequest.setSortBy(sortBy);
         filterRequest.setSortDirection(sortDirection);
-        
+
         Page<ProductResponse> products = productService.getProductsWithFilters(filterRequest);
         return ResponseEntity.ok(ApiResponse.success(products, "Filtrelenmiş ürünler başarıyla getirildi"));
     }
-    
+
     @GetMapping("/donation")
     @Operation(summary = "Bağış ürünlerini getir")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getDonationProducts(HttpServletRequest request) {
         List<ProductResponse> products = productService.getDonationProducts();
         return ResponseEntity.ok(ApiResponse.success(products, "Bağış ürünleri başarıyla getirildi"));
     }
-    
+
     @GetMapping("/donation/popular")
     @Operation(summary = "Popüler bağış ürünlerini getir")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getPopularDonationProducts(
@@ -94,16 +99,17 @@ public class ProductController {
         List<ProductResponse> products = productService.getPopularDonationProducts(limit);
         return ResponseEntity.ok(ApiResponse.success(products, "Popüler bağış ürünleri başarıyla getirildi"));
     }
-    
+
     @GetMapping("/category/{category}")
     @Operation(summary = "Kategoriye göre ürünleri getir")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByCategory(
             @PathVariable String category,
             HttpServletRequest request) {
         List<ProductResponse> products = productService.getProductsByCategory(category);
-        return ResponseEntity.ok(ApiResponse.success(products, category + " kategorisine ait ürünler başarıyla getirildi"));
+        return ResponseEntity
+                .ok(ApiResponse.success(products, category + " kategorisine ait ürünler başarıyla getirildi"));
     }
-    
+
     @GetMapping("/{id}")
     @Operation(summary = "ID'ye göre ürün getir")
     public ResponseEntity<ApiResponse<ProductResponse>> getProductById(
@@ -117,8 +123,9 @@ public class ProductController {
                     .body(ApiResponse.error(e.getMessage(), request.getRequestURI()));
         }
     }
-    
+
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Yeni ürün oluştur")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @RequestBody ProductCreateRequest request,
@@ -132,7 +139,7 @@ public class ProductController {
                     .body(ApiResponse.error(e.getMessage(), httpRequest.getRequestURI()));
         }
     }
-    
+
     @PutMapping("/{id}")
     @Operation(summary = "Ürün güncelle")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
@@ -147,7 +154,7 @@ public class ProductController {
                     .body(ApiResponse.error(e.getMessage(), httpRequest.getRequestURI()));
         }
     }
-    
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Ürün sil (soft delete)")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(

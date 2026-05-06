@@ -24,8 +24,11 @@ public class CategoryServiceImpl implements CategoryService {
     
     @Override
     public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll()
-            .stream()
+        List<Category> categories = categoryRepository.findAll();
+        System.out.println("DEBUG: Veritabanından gelen kategori sayısı: " + categories.size());
+        categories.forEach(c -> System.out.println("DEBUG: Kategori adı: '" + c.getName() + "'"));
+        
+        return categories.stream()
             .map(this::convertToResponse)
             .collect(Collectors.toList());
     }

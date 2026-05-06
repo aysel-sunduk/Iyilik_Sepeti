@@ -20,7 +20,8 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "users")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -64,6 +65,9 @@ public class User {
     
     @Builder.Default
     private BigDecimal walletBalance = BigDecimal.ZERO;
+    
+    @Builder.Default
+    private BigDecimal iyilikBalance = BigDecimal.ZERO;
     
     // Manuel getter - OrderService'de getFullName() diye çağırdığın için
     public String getFullName() {

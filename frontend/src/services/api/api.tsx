@@ -26,10 +26,10 @@ export const authApi = {
     apiClient.post<RegisterResponse>('/auth/register', data),
     
   getCurrentUser: () => 
-    apiClient.get<UserResponse>('/users/me'),
+    apiClient.get<UserResponse>('/api/users/me'),
     
   updateProfile: (data: Partial<UserResponse>) => 
-    apiClient.put<UserResponse>('/users/me', data),
+    apiClient.put<UserResponse>('/api/users/me', data),
     
   logout: (refreshToken: string) => 
     apiClient.post('/auth/logout', { refreshToken }),

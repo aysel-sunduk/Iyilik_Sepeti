@@ -25,9 +25,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (categoryRepository.count() == 0) {
-            seedCategories();
-        }
+        // Kategorileri her zaman kontrol et ve güncelle/ekle
+        seedOrUpdateCategories();
+        
         if (campaignRepository.count() == 0) {
             seedCampaigns();
         }
@@ -36,32 +36,77 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    private void seedOrUpdateCategories() {
+        // Eski isim -> Yeni isim haritası
+        updateCategoryName("Gıda", "Temel Gıda");
+        updateCategoryName("gıda", "Temel Gıda");
+        updateCategoryName("Giyim", "Giyim & Aksesuar");
+        updateCategoryName("giyim", "Giyim & Aksesuar");
+        updateCategoryName("Hijyen", "Temizlik & Hijyen");
+        updateCategoryName("hijyen", "Temizlik & Hijyen");
+        updateCategoryName("Çocuk", "Anne & Çocuk");
+        updateCategoryName("çocuk", "Anne & Çocuk");
+        updateCategoryName("Hayvan", "Evcil Hayvan");
+        updateCategoryName("hayvan", "Evcil Hayvan");
+        updateCategoryName("Hayvan Hakları", "Evcil Hayvan");
+        updateCategoryName("Eğitim", "Eğitim & Kırtasiye");
+
+        // Eğer hiç kategori yoksa temel seti oluştur
+        if (categoryRepository.count() == 0) {
+            seedCategories();
+        }
+    }
+
+    private void updateCategoryName(String oldName, String newName) {
+        categoryRepository.findByName(oldName).ifPresent(category -> {
+            category.setName(newName);
+            categoryRepository.save(category);
+            System.out.println("Kategori güncellendi: " + oldName + " -> " + newName);
+        });
+    }
+
     private void seedCategories() {
         Category cat1 = Category.builder()
-                .name("Gıda")
-                .nameSlug("gida")
+                .name("Temel Gıda")
+                .nameSlug("temel-gida")
                 .description("Temel gıda ihtiyaçları")
                 .type(CategoryType.BOTH)
                 .isActive(true)
                 .build();
 
         Category cat2 = Category.builder()
-                .name("Eğitim")
-                .nameSlug("egitim")
+                .name("Eğitim & Kırtasiye")
+                .nameSlug("egitim-kirtasiye")
                 .description("Eğitim ve kırtasiye malzemeleri")
                 .type(CategoryType.BOTH)
                 .isActive(true)
                 .build();
 
         Category cat3 = Category.builder()
-                .name("Hayvan Hakları")
-                .nameSlug("hayvan-haklari")
-                .description("Sokak hayvanları için yardımlar")
+                .name("Evcil Hayvan")
+                .nameSlug("evcil-hayvan")
+                .description("Sokak hayvanları ve evcil dostlarımız için yardımlar")
                 .type(CategoryType.DONATION)
                 .isActive(true)
                 .build();
 
-        categoryRepository.saveAll(Arrays.asList(cat1, cat2, cat3));
+        Category cat4 = Category.builder()
+                .name("Giyim & Aksesuar")
+                .nameSlug("giyim-aksesuar")
+                .description("İhtiyaç sahipleri için giyim yardımları")
+                .type(CategoryType.BOTH)
+                .isActive(true)
+                .build();
+
+        Category cat5 = Category.builder()
+                .name("Temizlik & Hijyen")
+                .nameSlug("temizlik-hijyen")
+                .description("Kişisel temizlik ve hijyen ürünleri")
+                .type(CategoryType.BOTH)
+                .isActive(true)
+                .build();
+
+        categoryRepository.saveAll(Arrays.asList(cat1, cat2, cat3, cat4, cat5));
     }
 
     private void seedCampaigns() {
@@ -100,7 +145,7 @@ public class DataInitializer implements CommandLineRunner {
         Product p1 = new Product();
         p1.setName("Mama Paketi (5kg)");
         p1.setDescription("Sokak hayvanları için besleyici kuru mama.");
-        p1.setCategory("Hayvan Hakları");
+        p1.setCategory("Evcil Hayvan");
         p1.setPrice(new BigDecimal("150.00"));
         p1.setStockQuantity(500);
         p1.setDonationCount(120);
@@ -111,7 +156,7 @@ public class DataInitializer implements CommandLineRunner {
         Product p2 = new Product();
         p2.setName("Temel Gıda Kolisi");
         p2.setDescription("Yağ, un, şeker ve bakliyat içeren yardım kolisi.");
-        p2.setCategory("Gıda");
+        p2.setCategory("Temel Gıda");
         p2.setPrice(new BigDecimal("450.00"));
         p2.setStockQuantity(100);
         p2.setDonationCount(45);

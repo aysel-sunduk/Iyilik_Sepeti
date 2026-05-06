@@ -90,6 +90,7 @@ export interface User {
   createdAt: string;
   lastLogin?: string;
   walletBalance: number;
+  iyilikBalance: number;
 }
 
 export interface UserResponse extends User {}

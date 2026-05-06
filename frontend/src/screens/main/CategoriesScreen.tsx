@@ -5,12 +5,17 @@ import api from '../../services/api/api';
 import { CategoryResponse as Category } from '../../services/api/types';
 
 const categoryConfigs: any = {
+  'temel gıda': { icon: '🍎', color: '#EF4444' },
+  'giyim & aksesuar': { icon: '👕', color: '#3B82F6' },
+  'temizlik & hijyen': { icon: '✨', color: '#10B981' },
+  'anne & çocuk': { icon: '🧸', color: '#F472B6' },
+  'evcil hayvan': { icon: '🐾', color: '#FB923C' },
+  'eğitim & kırtasiye': { icon: '📚', color: '#3B82F6' },
   'gıda': { icon: '🍎', color: '#EF4444' },
   'giyim': { icon: '👕', color: '#3B82F6' },
   'hijyen': { icon: '✨', color: '#10B981' },
   'çocuk': { icon: '🧸', color: '#F472B6' },
   'hayvan': { icon: '🐾', color: '#FB923C' },
-  'hayvan hakları': { icon: '🐾', color: '#FB923C' },
   'eğitim': { icon: '📚', color: '#3B82F6' },
   'default': { icon: '📦', color: '#6B7280' }
 };
@@ -40,7 +45,7 @@ export default function CategoriesScreen({ navigation }: any) {
     return (
       <TouchableOpacity 
         style={[styles.categoryCard, { backgroundColor: theme.surface, borderColor: theme.border + '50' }]}
-        onPress={() => navigation.navigate('Ana Sayfa', { categoryName: item.name })}
+        onPress={() => navigation.navigate('AllProducts', { categoryName: item.name })}
       >
         <View style={[styles.categoryIcon, { backgroundColor: config.color + '15' }]}>
           <Text style={{ fontSize: 40 }}>{config.icon}</Text>

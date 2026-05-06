@@ -1,6 +1,6 @@
 package com.donatecommerce.service;
 
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +50,7 @@ public class UserService {
         
         // Null güvenliği: Eğer veritabanında null ise 0 olarak dön
         response.setWalletBalance(user.getWalletBalance() != null ? user.getWalletBalance() : java.math.BigDecimal.ZERO);
+        response.setIyilikBalance(user.getIyilikBalance() != null ? user.getIyilikBalance() : java.math.BigDecimal.ZERO);
         
         response.setCreatedAt(user.getCreatedAt());
         return response;

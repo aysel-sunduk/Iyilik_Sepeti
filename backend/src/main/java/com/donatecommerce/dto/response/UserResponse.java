@@ -10,7 +10,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,6 +32,7 @@ public class UserResponse {
     private String role;
     private Boolean isActive;
     private BigDecimal walletBalance;
+    private BigDecimal iyilikBalance;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
 }

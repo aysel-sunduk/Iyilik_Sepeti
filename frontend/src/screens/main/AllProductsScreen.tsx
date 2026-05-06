@@ -29,18 +29,32 @@ export default function AllProductsScreen({ navigation, route }: any) {
   const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
-    fetchData();
+    fetchCategories();
   }, []);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    fetchProducts();
+  }, [activeCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const categoriesData = await api.categories.getAll();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
     try {
       setLoading(true);
-      const [productsData, categoriesData] = await Promise.all([
-        api.products.getAll(),
-        api.categories.getAll()
-      ]);
+      let productsData;
+      if (activeCategory === 'Hepsi') {
+        productsData = await api.products.getAll();
+      } else {
+        productsData = await api.products.getByCategory(activeCategory);
+      }
       setProducts(productsData);
-      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -49,9 +63,8 @@ export default function AllProductsScreen({ navigation, route }: any) {
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'Hepsi' || p.category === activeCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchText.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
   const handleAddToCart = (product: Product) => {

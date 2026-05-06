@@ -115,11 +115,12 @@ export default function ProfileScreen({ navigation }: any) {
             <Text style={styles.statEmoji}>💰</Text>
           </View>
           <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
-            <Text style={styles.statValue}>{livesTouched}</Text>
-            <Text style={[styles.statLabel, { color: theme.text3 }]}>Dokunulan Hayat</Text>
-            <Text style={styles.statEmoji}>🤝</Text>
+            <Text style={[styles.statValue, { color: theme.accent }]}>₺{user?.iyilikBalance || 0}</Text>
+            <Text style={[styles.statLabel, { color: theme.text3 }]}>İyilik Kumbaram</Text>
+            <Text style={styles.statEmoji}>✨</Text>
           </View>
         </View>
+
 
         {/* Badges Section */}
         <View style={styles.section}>

@@ -54,14 +54,18 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const categoryConfigs: any = {
+    'temel gıda': { icon: '🍎', color: '#EF4444' },
+    'giyim & aksesuar': { icon: '👕', color: '#3B82F6' },
+    'temizlik & hijyen': { icon: '✨', color: '#10B981' },
+    'anne & çocuk': { icon: '🧸', color: '#F472B6' },
+    'evcil hayvan': { icon: '🐾', color: '#FB923C' },
+    'eğitim & kırtasiye': { icon: '📚', color: '#3B82F6' },
     'gıda': { icon: '🍎', color: '#EF4444' },
     'giyim': { icon: '👕', color: '#3B82F6' },
     'hijyen': { icon: '✨', color: '#10B981' },
     'çocuk': { icon: '🧸', color: '#F472B6' },
     'hayvan': { icon: '🐾', color: '#FB923C' },
-    'hayvan hakları': { icon: '🐾', color: '#FB923C' },
     'eğitim': { icon: '📚', color: '#3B82F6' },
-    'temizlik': { icon: '🧼', color: '#3B82F6' },
     'default': { icon: '📦', color: '#6B7280' }
   };
 
@@ -226,6 +230,31 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
 
+          {/* İyilik Birikimi Banner */}
+          {user?.iyilikBalance > 0 && (
+            <View style={[styles.iyilikBanner, { backgroundColor: theme.accent + '10', borderColor: theme.accent + '30' }]}>
+              <View style={styles.iyilikContent}>
+                <View style={styles.iyilikTextContainer}>
+                  <Text style={[styles.iyilikTitle, { color: theme.accent }]}>✨ İyilik Kumbaranda ₺{user.iyilikBalance} Birikti!</Text>
+                  <Text style={[styles.iyilikSubtitle, { color: theme.text2 }]}>
+                    {user.iyilikBalance >= 10 
+                      ? 'Bir kampanya seçip bu birikimi bağışlayabilirsin.' 
+                      : 'Alışverişlerini yuvarlayarak bu kumbarayı büyütebilirsin.'}
+                  </Text>
+                </View>
+                {user.iyilikBalance >= 10 && (
+                  <TouchableOpacity 
+                    style={[styles.iyilikButton, { backgroundColor: theme.accent }]}
+                    onPress={() => navigation.navigate('Kategoriler')}
+                  >
+                    <Text style={styles.iyilikButtonText}>Bağışla</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+
+
           {/* Quick Access */}
           <View style={styles.quickAccess}>
             <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
@@ -260,7 +289,7 @@ export default function HomeScreen({ navigation }: any) {
                 <TouchableOpacity 
                   key={category.id} 
                   style={styles.categoryItem}
-                  onPress={() => navigation.navigate('Kategoriler', { categoryName: category.name })}
+                  onPress={() => navigation.navigate('AllProducts', { categoryName: category.name })}
                 >
                   <View style={[styles.categoryIconContainer, { backgroundColor: config.color + '15' }]}>
                     <Text style={styles.categoryIcon}>{config.icon}</Text>
@@ -492,4 +521,11 @@ const styles = StyleSheet.create({
   closeButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   successRing: { width: 100, height: 100, borderRadius: 50, borderWidth: 8, justifyContent: 'center', alignItems: 'center' },
   successCircle: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+  iyilikBanner: { marginVertical: 10, borderRadius: 20, padding: 15, borderWidth: 1, marginBottom: 25 },
+  iyilikContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  iyilikTextContainer: { flex: 1, marginRight: 10 },
+  iyilikTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 4 },
+  iyilikSubtitle: { fontSize: 12, opacity: 0.8 },
+  iyilikButton: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12 },
+  iyilikButtonText: { color: 'white', fontSize: 13, fontWeight: 'bold' },
 });
