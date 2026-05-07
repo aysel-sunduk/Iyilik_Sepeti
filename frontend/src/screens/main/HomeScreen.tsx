@@ -16,17 +16,27 @@ import { useTheme } from '../../context/ThemeContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { RootState } from '../../redux/store';
+import { resetLoggedIn } from '../../redux/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api/api';
 import { CategoryResponse as Category, ProductResponse as Product, CampaignResponse as Campaign } from '../../services/api/types';
 import { Modal } from 'react-native';
+import { LinearGradient, Defs, Stop, Rect, Circle } from 'react-native-svg';
 
 
 const LogoutIcon = ({ color }: { color: string }) => (
-  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Path d="M17 16L21 12L17 8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M21 12H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
     <Path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M16 17L21 12L16 7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M21 12H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CartIcon = ({ color }: { color: string }) => (
+  <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <Path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" fill={color} />
+    <Path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" fill={color} />
+    <Path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -51,6 +61,9 @@ export default function HomeScreen({ navigation }: any) {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', message: '', icon: '' });
   const [logoutSuccessVisible, setLogoutSuccessVisible] = useState(false);
+  const [loginSuccessVisible, setLoginSuccessVisible] = useState(false);
+  
+  const justLoggedIn = useSelector((state: RootState) => state.auth.justLoggedIn);
 
   const showAlert = (title: string, message: string, icon: string = '✨') => {
     setModalContent({ title, message, icon });
@@ -104,6 +117,16 @@ export default function HomeScreen({ navigation }: any) {
   useEffect(() => {
     filterProducts();
   }, [activeFilter, popularProducts]);
+
+  useEffect(() => {
+    if (justLoggedIn) {
+      setLoginSuccessVisible(true);
+      dispatch(resetLoggedIn());
+      setTimeout(() => {
+        setLoginSuccessVisible(false);
+      }, 3000);
+    }
+  }, [justLoggedIn]);
 
   const fetchData = async () => {
     try {
@@ -206,22 +229,19 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomWidth: 0 }]}>
           <View style={styles.headerTop}>
-            <View>
-              <Text style={[styles.greeting, { color: theme.text3 }]}>Merhaba 👋</Text>
-              <Text style={[styles.userName, { color: theme.text1 }]}>{user?.firstName || 'Misafir'}!</Text>
-            </View>
+            <Text style={[styles.logoText, { color: theme.accent }]}>İyilik Sepeti</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TouchableOpacity onPress={handleLogout} style={{ padding: 4 }}>
                 <LogoutIcon color={theme.accent} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigation.navigate('Sepetim')}>
-                <View style={styles.cartIcon}>
-                  <Text style={{ fontSize: 24 }}>🛒</Text>
+                <View style={styles.cartIconContainer}>
+                  <CartIcon color={theme.text1} />
                   {cartItemCount > 0 && (
-                    <View style={[styles.badge, { backgroundColor: theme.error }]}>
-                      <Text style={styles.badgeText}>{cartItemCount}</Text>
+                    <View style={[styles.cartBadge, { backgroundColor: theme.error }]}>
+                      <Text style={styles.cartBadgeText}>{cartItemCount}</Text>
                     </View>
                   )}
                 </View>
@@ -229,7 +249,65 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </View>
 
-          <View style={[styles.searchBar, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+          {/* Welcome Card - Fixed Alignment & Premium Look */}
+          <View style={styles.welcomeCardShadowContainer}>
+            <TouchableOpacity 
+              activeOpacity={0.9}
+              style={styles.welcomeCardContainer}
+              onPress={() => navigation.navigate('Profil')}
+            >
+              <View style={styles.welcomeCardInternal}>
+              <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+                <Defs>
+                  <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor={theme.accent} stopOpacity="1" />
+                    <Stop offset="100%" stopColor={theme.accentDark || '#059669'} stopOpacity="1" />
+                  </LinearGradient>
+                </Defs>
+                <Rect width="100%" height="100%" fill="url(#grad)" rx="24" ry="24" />
+                
+                {/* Decorative Circles for abstract look */}
+                <Circle cx="10%" cy="10%" r="40" fill="white" fillOpacity="0.05" />
+                <Circle cx="90%" cy="80%" r="60" fill="white" fillOpacity="0.08" />
+                <Circle cx="80%" cy="10%" r="30" fill="white" fillOpacity="0.03" />
+              </Svg>
+
+              <View style={styles.welcomeContentRow}>
+                <View style={styles.welcomeTextSection}>
+                  <Text style={styles.welcomeGreetingText}>İyi ki varsın, ✨</Text>
+                  <Text style={styles.welcomeNameText} numberOfLines={1}>
+                    {user?.firstName || 'Kahraman'}!
+                  </Text>
+                  
+                  <View style={styles.glassBadge}>
+                    <View style={styles.badgeSegment}>
+                      <Text style={styles.badgeEmoji}>🏆</Text>
+                      <Text style={styles.badgeTextVal}>{user?.iyilikBalance ?? 0}</Text>
+                      <Text style={styles.badgeLabel}>Puan</Text>
+                    </View>
+                    <View style={styles.badgeDivider} />
+                    <View style={styles.badgeSegment}>
+                      <Text style={styles.badgeEmoji}>💳</Text>
+                      <Text style={styles.badgeTextVal}>{user?.walletBalance ?? 0}₺</Text>
+                      <Text style={styles.badgeLabel}>Cüzdan</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.avatarGlowContainer}>
+                  <View style={[styles.avatarGlow, { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                    <View style={styles.avatarInnerCircle}>
+                      <Text style={{ fontSize: 36 }}>👤</Text>
+                    </View>
+                  </View>
+                  <View style={styles.onlineDot} />
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+          <View style={[styles.searchBar, { backgroundColor: theme.bg, borderColor: theme.border, marginTop: 16 }]}>
             <Text style={{ fontSize: 20, marginRight: 10 }}>🔍</Text>
             <TextInput
               placeholder="Ürün veya kategori ara..."
@@ -298,18 +376,18 @@ export default function HomeScreen({ navigation }: any) {
           </View>
 
           {/* İyilik Birikimi Banner */}
-          {user && user.iyilikBalance > 0 && (
+          {user && (user.iyilikBalance ?? 0) > 0 && (
             <View style={[styles.iyilikBanner, { backgroundColor: theme.accent + '10', borderColor: theme.accent + '30' }]}>
               <View style={styles.iyilikContent}>
                 <View style={styles.iyilikTextContainer}>
-                  <Text style={[styles.iyilikTitle, { color: theme.accent }]}>✨ İyilik Kumbaranda ₺{user.iyilikBalance} Birikti!</Text>
+                  <Text style={[styles.iyilikTitle, { color: theme.accent }]}>✨ İyilik Kumbaranda ₺{user.iyilikBalance ?? 0} Birikti!</Text>
                   <Text style={[styles.iyilikSubtitle, { color: theme.text2 }]}>
-                    {user.iyilikBalance >= 10
+                    {(user.iyilikBalance ?? 0) >= 10
                       ? 'Bir kampanya seçip bu birikimi bağışlayabilirsin.'
                       : 'Alışverişlerini yuvarlayarak bu kumbarayı büyütebilirsin.'}
                   </Text>
                 </View>
-                {user.iyilikBalance >= 10 && (
+                {(user.iyilikBalance ?? 0) >= 10 && (
                   <TouchableOpacity
                     style={[styles.iyilikButton, { backgroundColor: theme.accent }]}
                     onPress={() => navigation.navigate('AllProducts', { categoryName: 'Bağış' })}
@@ -395,14 +473,23 @@ export default function HomeScreen({ navigation }: any) {
                     </TouchableOpacity>
                   </View>
                   <View style={styles.productInfo}>
-                    <Text style={[styles.productName, { color: theme.text1 }]} numberOfLines={1}>{product.name}</Text>
-                    <Text style={[styles.productPrice, { color: theme.accent }]}>{product.price.toLocaleString('tr-TR')} ₺</Text>
-                    <View style={styles.productActions}>
-                      <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#3B82F6' }]} onPress={() => handleAddToCart(product)}>
-                        <Text style={[styles.actionButtonText, { color: 'white' }]}>Sepet</Text>
+                    <Text style={[styles.productName, { color: theme.text1 }]} numberOfLines={2}>{product.name}</Text>
+                    <View style={styles.productPriceRow}>
+                      <Text style={[styles.productPrice, { color: theme.accent }]}>{product.price.toLocaleString('tr-TR')} ₺</Text>
+                    </View>
+                    
+                    <View style={styles.productActionsRow}>
+                      <TouchableOpacity 
+                        style={[styles.shoppingCartButton, { backgroundColor: theme.accent + '15' }]} 
+                        onPress={() => handleAddToCart(product)}
+                      >
+                        <Text style={{ fontSize: 16 }}>🛒</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10B981' }]} onPress={() => handleDonateProduct(product)}>
-                        <Text style={[styles.actionButtonText, { color: 'white' }]}>Bağış</Text>
+                      <TouchableOpacity 
+                        style={[styles.donateProductButton, { backgroundColor: theme.accent }]} 
+                        onPress={() => handleDonateProduct(product)}
+                      >
+                        <Text style={styles.donateProductText}>Bağışla</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -505,6 +592,46 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </Modal>
 
+      {/* Login Success Modal - Premium & Interactive */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={loginSuccessVisible}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.loginSuccessContent, { backgroundColor: theme.surface }]}>
+            <LinearGradient
+              colors={[theme.accent, theme.accentDark || '#059669']}
+              style={styles.loginSuccessHeader}
+            >
+              <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+                <Circle cx="20%" cy="20%" r="30" fill="white" fillOpacity="0.1" />
+                <Circle cx="80%" cy="80%" r="50" fill="white" fillOpacity="0.15" />
+              </Svg>
+              <View style={styles.successIconOuter}>
+                <View style={styles.successIconInner}>
+                  <Text style={{ fontSize: 40 }}>🏆</Text>
+                </View>
+              </View>
+            </LinearGradient>
+            
+            <View style={styles.loginSuccessBody}>
+              <Text style={[styles.loginSuccessTitle, { color: theme.text1 }]}>Tekrar Hoş Geldin!</Text>
+              <Text style={[styles.loginSuccessMessage, { color: theme.text3 }]}>
+                {user?.firstName || 'Kahraman'}, seninle birlikte iyilik yapmaya devam etmek harika. ✨
+              </Text>
+              
+              <TouchableOpacity 
+                style={[styles.loginSuccessButton, { backgroundColor: theme.accent }]}
+                onPress={() => setLoginSuccessVisible(false)}
+              >
+                <Text style={styles.loginSuccessButtonText}>Hadi Başlayalım!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Logout Success Modal */}
       <Modal
         animationType="fade"
@@ -529,14 +656,181 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { padding: 20, paddingTop: 60, borderBottomWidth: 1 },
+  header: { padding: 20, paddingTop: 60 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  greeting: { fontSize: 16, fontWeight: '500' },
-  userName: { fontSize: 22, fontWeight: 'bold' },
-  cartIcon: { position: 'relative', padding: 5 },
-  badge: { position: 'absolute', top: 0, right: 0, borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5 },
-  badgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, height: 50, borderRadius: 12, borderWidth: 1 },
+  logoText: { fontSize: 24, fontWeight: 'bold', letterSpacing: -1 },
+  welcomeCardShadowContainer: {
+    marginVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  welcomeCardContainer: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#10B981', // Fallback color
+  },
+  welcomeCardInternal: {
+    padding: 22,
+    minHeight: 150,
+    justifyContent: 'center',
+  },
+  welcomeContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 1,
+  },
+  welcomeTextSection: {
+    flex: 1,
+    marginRight: 16,
+  },
+  welcomeGreetingText: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  welcomeNameText: {
+    fontSize: 22,
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  glassBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  badgeSegment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  badgeEmoji: {
+    fontSize: 14,
+  },
+  badgeTextVal: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  badgeLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+  },
+  badgeDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    marginHorizontal: 12,
+  },
+  avatarGlowContainer: {
+    position: 'relative',
+  },
+  avatarGlow: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  avatarInnerCircle: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  onlineDot: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  loginSuccessContent: {
+    width: '85%',
+    borderRadius: 32,
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+  },
+  loginSuccessHeader: {
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successIconOuter: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successIconInner: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  loginSuccessBody: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  loginSuccessTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  loginSuccessMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  loginSuccessButton: {
+    width: '100%',
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+  },
+  loginSuccessButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cartIconContainer: { position: 'relative', padding: 8, backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: 12 },
+  cartBadge: { position: 'absolute', top: -2, right: -2, borderRadius: 10, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: 'white' },
+  cartBadgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, height: 50, borderRadius: 16, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   searchInput: { flex: 1, fontSize: 16 },
   content: { padding: 20 },
   filtersContainer: { marginBottom: 20 },
@@ -568,14 +862,40 @@ const styles = StyleSheet.create({
   categoryIcon: { fontSize: 32 },
   categoryName: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
   productsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 20 },
-  productCard: { width: '48%', borderRadius: 20, marginBottom: 16, padding: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, borderWidth: 1 },
-  productImageContainer: { width: '100%', height: 140, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  productInfo: { paddingHorizontal: 4 },
-  productName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-  productPrice: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  productActions: { flexDirection: 'row', gap: 6 },
-  actionButton: { flex: 1, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  actionButtonText: { fontSize: 11, fontWeight: 'bold' },
+  productCard: { 
+    width: '48%', 
+    borderRadius: 20, 
+    marginBottom: 20, 
+    padding: 8, 
+    elevation: 4, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 4, 
+    borderWidth: 1 
+  },
+  productImageContainer: { width: '100%', height: 150, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10, overflow: 'hidden' },
+  productInfo: { paddingHorizontal: 4, flex: 1, justifyContent: 'space-between' },
+  productName: { fontSize: 15, fontWeight: '600', marginBottom: 6, lineHeight: 18, height: 36 },
+  productPriceRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  productPrice: { fontSize: 18, fontWeight: 'bold' },
+  productActionsRow: { flexDirection: 'row', gap: 8, marginTop: 'auto' },
+  shoppingCartButton: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  donateProductButton: { 
+    flex: 1, 
+    height: 40, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 2
+  },
+  donateProductText: { fontSize: 12, fontWeight: 'bold', color: 'white' },
   campaignCard: { borderRadius: 20, borderWidth: 1, padding: 15, marginBottom: 15 },
   campaignHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   campaignImage: { width: 60, height: 60, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },

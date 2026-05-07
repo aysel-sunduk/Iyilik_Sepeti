@@ -5,6 +5,8 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  iyilikBalance?: number;
+  walletBalance?: number;
 }
 
 interface AuthState {
@@ -13,6 +15,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   treeProgress: number;
+  justLoggedIn: boolean;
 }
 
 const initialState: AuthState = {
@@ -21,6 +24,7 @@ const initialState: AuthState = {
   loading: false,
   error: null,
   treeProgress: 0,
+  justLoggedIn: false,
 };
 
 const authSlice = createSlice({
@@ -52,6 +56,10 @@ const authSlice = createSlice({
     loginSuccess: (state, action: PayloadAction<User>) => {
       state.loading = false;
       state.user = action.payload;
+      state.justLoggedIn = true;
+    },
+    resetLoggedIn: (state) => {
+      state.justLoggedIn = false;
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -73,6 +81,7 @@ export const {
   loginSuccess,
   loginFailure,
   logout,
+  resetLoggedIn,
 } = authSlice.actions;
 
 export default authSlice.reducer;

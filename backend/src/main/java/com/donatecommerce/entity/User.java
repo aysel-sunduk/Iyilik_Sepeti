@@ -57,6 +57,7 @@ public class User {
     private Boolean phoneVerified;
     private LocalDateTime lastLogin;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 

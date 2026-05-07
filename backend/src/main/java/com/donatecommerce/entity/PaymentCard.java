@@ -50,9 +50,12 @@ public class PaymentCard {
     @Column(nullable = false)
     private String cardToken; // Simulated token from payment provider
 
+    @Builder.Default
     private Boolean isDefault = false;
+    @Builder.Default
     private Boolean isDeleted = false;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 }

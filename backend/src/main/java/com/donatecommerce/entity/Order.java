@@ -73,6 +73,7 @@ public class Order {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isDeleted = false;
 

@@ -48,6 +48,7 @@ public class OrderItem {
     @Column(nullable = false, precision = 38, scale = 2)
     private BigDecimal subtotal;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isDonation = false;
 }

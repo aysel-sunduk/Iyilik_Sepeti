@@ -52,6 +52,7 @@ public class Address {
     @Column(name = "postal_code", length = 255)
     private String postalCode;
 
+    @Builder.Default
     @Column(name = "is_default")
     private Boolean isDefault = false;
 
@@ -61,6 +62,7 @@ public class Address {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
 

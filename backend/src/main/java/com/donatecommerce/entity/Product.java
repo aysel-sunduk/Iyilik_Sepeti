@@ -47,10 +47,13 @@ public class Product {
 
     private String unit;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     private Boolean isActive = true;
+    @Builder.Default
     private Boolean isDeleted = false;
 
     // --- Yeni Özellik Alanları ---

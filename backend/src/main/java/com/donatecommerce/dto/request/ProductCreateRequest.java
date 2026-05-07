@@ -9,16 +9,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Ürün oluşturma isteği")
 public class ProductCreateRequest {
     
-    @Schema(description = "Ürün adı", required = true, example = "Mama Paketi")
+    @Schema(description = "Ürün adı", requiredMode = Schema.RequiredMode.REQUIRED, example = "Mama Paketi")
     private String name;
     
-    @Schema(description = "Ürün açıklaması", required = true, example = "Sokak hayvanları için mama")
+    @Schema(description = "Ürün açıklaması", requiredMode = Schema.RequiredMode.REQUIRED, example = "Sokak hayvanları için mama")
     private String description;
     
-    @Schema(description = "Kategori", required = true, example = "Hayvan")
+    @Schema(description = "Kategori", requiredMode = Schema.RequiredMode.REQUIRED, example = "Hayvan")
     private String category;
     
-    @Schema(description = "Fiyat", required = true, example = "150.00")
+    @Schema(description = "Fiyat", requiredMode = Schema.RequiredMode.REQUIRED, example = "150.00")
     private BigDecimal price;
     
     @Schema(description = "Resim URL", example = "https://example.com/image.jpg")

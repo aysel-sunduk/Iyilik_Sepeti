@@ -40,6 +40,7 @@ public class Payment {
 
     private String status;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt;
 }

@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Kategori oluşturma isteği")
 public class CategoryCreateRequest {
     
-    @Schema(description = "Kategori adı", required = true, example = "Eğitim")
+    @Schema(description = "Kategori adı", requiredMode = Schema.RequiredMode.REQUIRED, example = "Eğitim")
     private String name;
     
     @Schema(description = "Kategori slug", example = "egitim")
@@ -20,7 +20,7 @@ public class CategoryCreateRequest {
     @Schema(description = "Resim URL", example = "https://example.com/category.jpg")
     private String imageUrl;
     
-    @Schema(description = "Kategori tipi", required = true, example = "BOTH")
+    @Schema(description = "Kategori tipi", requiredMode = Schema.RequiredMode.REQUIRED, example = "BOTH")
     private CategoryType type;
     
     // Getters and Setters

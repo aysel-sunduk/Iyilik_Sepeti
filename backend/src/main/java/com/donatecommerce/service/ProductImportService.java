@@ -125,6 +125,14 @@ public class ProductImportService {
         try {
             String url = dummyJsonUrl + "/products?limit=100";
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            
+            if (response == null || !response.containsKey("products")) {
+                return ImportResponse.builder()
+                        .success(false)
+                        .message("Invalid response from DummyJSON API")
+                        .build();
+            }
+
             List<Map<String, Object>> products = (List<Map<String, Object>>) response.get("products");
             
             if (products == null || products.isEmpty()) {

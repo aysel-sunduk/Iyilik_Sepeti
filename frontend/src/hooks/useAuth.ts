@@ -59,7 +59,7 @@ export const useAuth = () => {
         //role: response.role
       }));
       
-      Alert.alert('Başarılı', 'Hoş geldin kahraman 🦸');
+      // Alert.alert('Başarılı', 'Hoş geldin kahraman 🦸'); // Removed intrusive alert
       return true;
     } catch (error: any) {
       const errorMessage = error.message || 'E-posta veya şifre hatalı';

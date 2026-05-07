@@ -158,14 +158,5 @@ public class WebScraperService {
         }
     }
 
-    private Category getOrCreateCategory(String categoryName) {
-        return categoryRepository.findByNameIgnoreCase(categoryName)
-                .orElseGet(() -> {
-                    Category cat = new Category();
-                    cat.setName(categoryName.toLowerCase());
-                    cat.setIsActive(true);
-                    cat.setCreatedAt(LocalDateTime.now());
-                    return categoryRepository.save(cat);
-                });
     }
 }

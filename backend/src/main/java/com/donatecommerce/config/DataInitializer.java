@@ -3,6 +3,7 @@ package com.donatecommerce.config;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -112,7 +113,7 @@ public class DataInitializer implements CommandLineRunner {
                 .isActive(true)
                 .build();
 
-        categoryRepository.saveAll(Arrays.asList(cat1, cat2, cat3, cat4, cat5));
+        categoryRepository.saveAll(List.of(cat1, cat2, cat3, cat4, cat5));
     }
 
     private void seedCampaigns() {
@@ -140,7 +141,7 @@ public class DataInitializer implements CommandLineRunner {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        campaignRepository.saveAll(Arrays.asList(camp1, camp2));
+        campaignRepository.saveAll(List.of(camp1, camp2));
     }
 
     private void seedProducts() {
@@ -179,6 +180,6 @@ public class DataInitializer implements CommandLineRunner {
         p2.setLatitude(41.0050);
         p2.setLongitude(28.9750);
 
-        productRepository.saveAll(Arrays.asList(p1, p2));
+        productRepository.saveAll(List.of(p1, p2));
     }
 }
