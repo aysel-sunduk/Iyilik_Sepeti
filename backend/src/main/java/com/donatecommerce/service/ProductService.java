@@ -25,6 +25,10 @@ public interface ProductService {
     
     List<ProductResponse> getPopularDonationProducts(int limit);
     
+    List<ProductResponse> getFlashSales();
+    
+    List<ProductResponse> getNearbyProducts(Double lat, Double lng, Double radiusKm);
+    
     ProductResponse createProduct(ProductCreateRequest request);
     
     ProductResponse updateProduct(UUID id, ProductUpdateRequest request);

@@ -52,6 +52,30 @@ public class Product {
 
     private Boolean isActive = true;
     private Boolean isDeleted = false;
+
+    // --- Yeni Özellik Alanları ---
+
+    // Flaş İndirim için
+    @Builder.Default
+    private Boolean isFlashSale = false;
+    private BigDecimal oldPrice;
+    private LocalDateTime flashSaleEndDate;
+
+    // Popülerlik için
+    @Builder.Default
+    private Integer salesCount = 0;
+    @Builder.Default
+    private Integer viewCount = 0;
+
+    // Konum bazlı arama için (Yakınımda)
+    private Double latitude;
+    private Double longitude;
+    private String city;
+    private String district;
+    
+    // Yeni Sezon için (Manuel kurgu)
+    @Builder.Default
+    private Boolean isNewSeason = false;
     
     // Manuel getter - OrderService'de getStock() diye çağırdığın için
     public Integer getStock() {

@@ -100,6 +100,24 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(products, "Popüler bağış ürünleri başarıyla getirildi"));
     }
 
+    @GetMapping("/flash-sales")
+    @Operation(summary = "Flaş indirimdeki ürünleri getir")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getFlashSales(HttpServletRequest request) {
+        List<ProductResponse> products = productService.getFlashSales();
+        return ResponseEntity.ok(ApiResponse.success(products, "Flaş indirim ürünleri başarıyla getirildi"));
+    }
+
+    @GetMapping("/nearby")
+    @Operation(summary = "Yakındaki ürünleri getir")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getNearbyProducts(
+            @RequestParam Double lat,
+            @RequestParam Double lng,
+            @RequestParam(defaultValue = "5.0") Double radiusKm,
+            HttpServletRequest request) {
+        List<ProductResponse> products = productService.getNearbyProducts(lat, lng, radiusKm);
+        return ResponseEntity.ok(ApiResponse.success(products, "Yakındaki ürünler başarıyla getirildi"));
+    }
+
     @GetMapping("/category/{category}")
     @Operation(summary = "Kategoriye göre ürünleri getir")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductsByCategory(
@@ -141,6 +159,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Ürün güncelle")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable UUID id,
@@ -156,6 +175,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Ürün sil (soft delete)")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(
             @PathVariable UUID id,

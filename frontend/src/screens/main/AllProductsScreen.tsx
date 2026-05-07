@@ -7,7 +7,9 @@ import {
   TouchableOpacity, 
   TextInput, 
   ActivityIndicator,
-  Dimensions 
+  Dimensions,
+  ToastAndroid,
+  Platform
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useDispatch } from 'react-redux';
@@ -32,9 +34,30 @@ export default function AllProductsScreen({ navigation, route }: any) {
     fetchCategories();
   }, []);
 
+  // Listen for navigation parameter changes and force state update
+  useEffect(() => {
+    const categoryFromParams = route.params?.categoryName;
+    if (categoryFromParams) {
+      setActiveCategory(categoryFromParams);
+    }
+  }, [route.params?.categoryName]);
+
   useEffect(() => {
     fetchProducts();
+    fetchFavorites();
   }, [activeCategory]);
+
+  const fetchFavorites = async () => {
+    try {
+      const favResponse = await api.favorites.getProducts();
+      const favs = favResponse.data || favResponse;
+      if (Array.isArray(favs)) {
+        setFavorites(favs.map((p: any) => p.id));
+      }
+    } catch(e) {
+      console.log('User might not be logged in or error fetching favorites');
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -49,12 +72,25 @@ export default function AllProductsScreen({ navigation, route }: any) {
     try {
       setLoading(true);
       let productsData;
-      if (activeCategory === 'Hepsi') {
+      if (activeCategory === 'Yeni Sezon') {
+        // Yeni sezon filtresi - createdAt DESC (ya da isNewSeason: true)
+        const response = await api.products.getFiltered({ sortBy: 'createdAt', sortDirection: 'DESC', isNewSeason: true });
+        productsData = response.content || response.data?.content || [];
+      } else if (activeCategory === 'Bağış') {
+        productsData = await api.products.getDonationProducts();
+      } else if (activeCategory === 'Flaş İndirim') {
+        productsData = await api.products.getFlashSales();
+      } else if (activeCategory === 'Popüler') {
+        productsData = await api.products.getPopularDonationProducts(20);
+      } else if (activeCategory === 'Yakınımda') {
+        // Fallback for location, hardcoded for demo or use Geolocation API
+        productsData = await api.products.getNearbyProducts(41.0082, 28.9784, 10);
+      } else if (activeCategory === 'Hepsi') {
         productsData = await api.products.getAll();
       } else {
         productsData = await api.products.getByCategory(activeCategory);
       }
-      setProducts(productsData);
+      setProducts(productsData || []);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -79,13 +115,43 @@ export default function AllProductsScreen({ navigation, route }: any) {
     }));
   };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const toggleFavorite = async (productId: string) => {
+    try {
+      await api.favorites.toggle(productId);
+      setFavorites(prev => {
+        const isCurrentlyFavorite = prev.includes(productId);
+        
+        const msg = isCurrentlyFavorite ? 'Favorilerden çıkarıldı' : 'Favorilere eklendi ❤️';
+        if (Platform.OS === 'android') {
+          ToastAndroid.show(msg, ToastAndroid.SHORT);
+        }
+
+        return isCurrentlyFavorite 
+          ? prev.filter(id => id !== productId)
+          : [...prev, productId];
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const renderProductItem = ({ item }: { item: Product }) => {
+    const isFavorite = favorites.includes(item.id);
+    return (
     <TouchableOpacity 
       style={[styles.productCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
       onPress={() => navigation.navigate('ProductDetail', { product: item })}
     >
       <View style={[styles.imagePlaceholder, { backgroundColor: theme.bg }]}>
         <Text style={{ fontSize: 40 }}>{item.category.toLowerCase().includes('gıda') ? '🍎' : item.category.toLowerCase().includes('giyim') ? '👕' : '📦'}</Text>
+        <TouchableOpacity 
+          style={{ position: 'absolute', top: 10, right: 10 }}
+          onPress={() => toggleFavorite(item.id)}
+        >
+          <Text style={{ fontSize: 20, color: isFavorite ? '#EF4444' : theme.text3 }}>{isFavorite ? '❤️' : '🤍'}</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.productInfo}>
         <Text style={[styles.productName, { color: theme.text1 }]} numberOfLines={1}>{item.name}</Text>
@@ -101,7 +167,7 @@ export default function AllProductsScreen({ navigation, route }: any) {
         </View>
       </View>
     </TouchableOpacity>
-  );
+  )};
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
@@ -126,7 +192,7 @@ export default function AllProductsScreen({ navigation, route }: any) {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={['Hepsi', ...categories.map(c => c.name)]}
+          data={['Hepsi', 'Yeni Sezon', 'Flaş İndirim', 'Bağış', 'Popüler', 'Yakınımda', ...categories.map(c => c.name)]}
           keyExtractor={(item) => item}
           contentContainerStyle={styles.categoryList}
           renderItem={({ item }) => (

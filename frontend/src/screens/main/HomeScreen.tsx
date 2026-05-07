@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Dimensions,
-  Alert
+  Alert,
+  ToastAndroid,
+  Platform
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../context/ThemeContext';
@@ -22,9 +24,9 @@ import { Modal } from 'react-native';
 
 const LogoutIcon = ({ color }: { color: string }) => (
   <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <Path d="M17 16L21 12L17 8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M21 12H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <Path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M17 16L21 12L17 8" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M21 12H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -34,14 +36,16 @@ export default function HomeScreen({ navigation }: any) {
   const { logout } = useAuth();
   const user = useSelector((state: RootState) => state.auth.user);
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  
+
   const [activeFilter, setActiveFilter] = useState('Hepsi');
   const [searchText, setSearchText] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   // Custom Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -69,6 +73,30 @@ export default function HomeScreen({ navigation }: any) {
     'default': { icon: '📦', color: '#6B7280' }
   };
 
+  const toggleFavorite = async (productId: string) => {
+    try {
+      await api.favorites.toggle(productId);
+      setFavorites(prev => {
+        const isCurrentlyFavorite = prev.includes(productId);
+
+        // Show toast
+        const msg = isCurrentlyFavorite ? 'Favorilerden çıkarıldı' : 'Favorilere eklendi ❤️';
+        if (Platform.OS === 'android') {
+          ToastAndroid.show(msg, ToastAndroid.SHORT);
+        } else {
+          // iOS için fallback olarak hiçbir şey yapmayabilir veya bir alert verebiliriz
+          // Alert.alert('', msg);
+        }
+
+        return isCurrentlyFavorite
+          ? prev.filter(id => id !== productId)
+          : [...prev, productId];
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -86,8 +114,21 @@ export default function HomeScreen({ navigation }: any) {
         api.campaigns.getAll()
       ]);
       setCategories(categoriesData);
+      setAllProducts(productsData);
       setPopularProducts(productsData.slice(0, 6)); // Öne çıkanlar için ilk 6'yı al
       setCampaigns(campaignsData);
+
+      if (user) {
+        try {
+          const favResponse = await api.favorites.getProducts();
+          const favs = favResponse.data || favResponse; // Extract array depending on response wrapper
+          if (Array.isArray(favs)) {
+            setFavorites(favs.map((p: any) => p.id));
+          }
+        } catch (e) {
+          console.error('Error fetching favorites:', e);
+        }
+      }
     } catch (error: any) {
       console.error('Error fetching data:', error);
     } finally {
@@ -96,17 +137,33 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const filterProducts = () => {
-    let result = [...popularProducts];
-    if (activeFilter === 'İndirimdekiler') {
-      result = popularProducts.filter(p => p.price < 300);
-    } else if (activeFilter === 'Bağış Ürünleri') {
-      result = popularProducts.filter(p => p.category.toLowerCase().includes('hayvan') || p.category.toLowerCase().includes('çocuk'));
+    let result = [...allProducts];
+
+    if (activeFilter === 'Bağış Ürünleri') {
+      result = allProducts.filter(p =>
+        p.category?.toLowerCase().includes('bağış') ||
+        p.category?.toLowerCase().includes('hayvan') ||
+        p.category?.toLowerCase().includes('çocuk') ||
+        p.isDonationProduct === true
+      );
+    } else if (activeFilter === 'İndirimdekiler') {
+      result = allProducts.filter(p =>
+        (p.oldPrice && p.oldPrice > p.price) ||
+        p.isFlashSale === true ||
+        p.price < 200
+      );
     } else if (activeFilter === 'Popüler') {
-      result = popularProducts.filter(p => p.price > 400);
+      // Satış adedi yüksek olanlar veya fiyatı/değeri yüksek olanlar
+      result = [...allProducts].sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
     } else if (activeFilter === 'Yeni') {
-      result = popularProducts.slice(0, 3);
+      // Yeni sezon işaretli olanlar veya en son eklenenler
+      result = allProducts.filter(p => p.isNewSeason === true);
+      if (result.length === 0) {
+        result = [...allProducts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
     }
-    setFilteredProducts(result);
+
+    setFilteredProducts(result.slice(0, 10)); // Anasayfada en fazla 10 tane göster
   };
 
   const handleLogout = () => {
@@ -114,33 +171,33 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleAddToCart = (product: Product) => {
-    dispatch(addToCart({ 
-      id: product.id, 
-      name: product.name, 
-      price: product.price, 
-      image: product.imageUrl || '📦', 
+    dispatch(addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.imageUrl || '📦',
       seller: product.category,
-      quantity: 1, 
-      type: 'self' 
+      quantity: 1,
+      type: 'self'
     }));
     showAlert('Başarılı', `${product.name} sepete eklendi!`, '🛒');
   };
 
   const handleDonateProduct = (product: Product) => {
-    navigation.navigate('DonationFlow', { 
-      product: { 
-        ...product, 
+    navigation.navigate('DonationFlow', {
+      product: {
+        ...product,
         image: product.imageUrl || '📦',
         seller: product.category,
-        isDonation: true 
-      } 
+        isDonation: true
+      }
     });
   };
 
   const handleDonateCampaign = (campaign: Campaign) => {
-    navigation.navigate('DonationFlow', { 
+    navigation.navigate('DonationFlow', {
       campaign: campaign,
-      isCampaign: true 
+      isCampaign: true
     });
   };
 
@@ -171,7 +228,7 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={[styles.searchBar, { backgroundColor: theme.bg, borderColor: theme.border }]}>
             <Text style={{ fontSize: 20, marginRight: 10 }}>🔍</Text>
             <TextInput
@@ -190,7 +247,17 @@ export default function HomeScreen({ navigation }: any) {
             {['Hepsi', 'Bağış Ürünleri', 'İndirimdekiler', 'Popüler', 'Yeni'].map((filter, index) => (
               <TouchableOpacity 
                 key={index} 
-                onPress={() => setActiveFilter(filter)}
+                onPress={() => {
+                  setActiveFilter(filter);
+                  const navMap: any = {
+                    'Bağış Ürünleri': 'Bağış',
+                    'İndirimdekiler': 'Flaş İndirim',
+                    'Popüler': 'Popüler',
+                    'Yeni': 'Yeni Sezon',
+                    'Hepsi': 'Hepsi'
+                  };
+                  navigation.navigate('AllProducts', { categoryName: navMap[filter] || filter });
+                }}
                 style={[
                   styles.filterChip, 
                   activeFilter === filter ? { backgroundColor: theme.accent } : { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border }
@@ -205,14 +272,14 @@ export default function HomeScreen({ navigation }: any) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storiesContainer} contentContainerStyle={styles.storiesContent}>
             <TouchableOpacity style={styles.storyItem} onPress={() => showAlert('Canlı Yayın', 'Şu an aktif bir yayın bulunmamaktadır.', '🎬')}>
               <View style={[styles.storyCircle, { borderColor: '#10B981' }]}>
-                <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{fontSize: 24}}>🎬</Text></View>
+                <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{ fontSize: 24 }}>🎬</Text></View>
               </View>
               <Text style={[styles.storyText, { color: theme.text2 }]}>Canlı</Text>
             </TouchableOpacity>
             {['Mama Dağıtımı', 'Yeni Okul', 'Sokak Dostları', 'Duyuru'].map((story, index) => (
               <TouchableOpacity key={index} style={styles.storyItem} onPress={() => showAlert('Hikaye', `${story} videosu yükleniyor...`, ['🐕', '🎒', '🦴', '📢'][index])}>
                 <View style={[styles.storyCircle, { borderColor: theme.accent }]}>
-                  <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{fontSize: 24}}>{['🐕', '🎒', '🦴', '📢'][index]}</Text></View>
+                  <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{ fontSize: 24 }}>{['🐕', '🎒', '🦴', '📢'][index]}</Text></View>
                 </View>
                 <Text style={[styles.storyText, { color: theme.text2 }]} numberOfLines={1}>{story}</Text>
               </TouchableOpacity>
@@ -224,28 +291,28 @@ export default function HomeScreen({ navigation }: any) {
             <View style={styles.heroContent}>
               <Text style={[styles.heroTitle, { color: theme.text1 }]}>Yeni Sezon Ürünler 🌟</Text>
               <Text style={[styles.heroSubtitle, { color: theme.text2 }]}>En kaliteli ürünler, en uygun fiyatlarla kapında.</Text>
-              <TouchableOpacity style={[styles.heroButton, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Kategoriler')}>
+              <TouchableOpacity style={[styles.heroButton, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('AllProducts', { categoryName: 'Yeni Sezon' })}>
                 <Text style={[styles.heroButtonText, { color: 'white' }]}>Koleksiyonu İncele</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* İyilik Birikimi Banner */}
-          {user?.iyilikBalance > 0 && (
+          {user && user.iyilikBalance > 0 && (
             <View style={[styles.iyilikBanner, { backgroundColor: theme.accent + '10', borderColor: theme.accent + '30' }]}>
               <View style={styles.iyilikContent}>
                 <View style={styles.iyilikTextContainer}>
                   <Text style={[styles.iyilikTitle, { color: theme.accent }]}>✨ İyilik Kumbaranda ₺{user.iyilikBalance} Birikti!</Text>
                   <Text style={[styles.iyilikSubtitle, { color: theme.text2 }]}>
-                    {user.iyilikBalance >= 10 
-                      ? 'Bir kampanya seçip bu birikimi bağışlayabilirsin.' 
+                    {user.iyilikBalance >= 10
+                      ? 'Bir kampanya seçip bu birikimi bağışlayabilirsin.'
                       : 'Alışverişlerini yuvarlayarak bu kumbarayı büyütebilirsin.'}
                   </Text>
                 </View>
                 {user.iyilikBalance >= 10 && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.iyilikButton, { backgroundColor: theme.accent }]}
-                    onPress={() => navigation.navigate('Kategoriler')}
+                    onPress={() => navigation.navigate('AllProducts', { categoryName: 'Bağış' })}
                   >
                     <Text style={styles.iyilikButtonText}>Bağışla</Text>
                   </TouchableOpacity>
@@ -257,20 +324,20 @@ export default function HomeScreen({ navigation }: any) {
 
           {/* Quick Access */}
           <View style={styles.quickAccess}>
-            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
-              <View style={[styles.quickIcon, { backgroundColor: '#3B82F615' }]}><Text style={{fontSize: 24}}>⚡</Text></View>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('AllProducts', { categoryName: 'Flaş İndirim' })}>
+              <View style={[styles.quickIcon, { backgroundColor: '#3B82F615' }]}><Text style={{ fontSize: 24 }}>⚡</Text></View>
               <Text style={[styles.quickText, { color: theme.text2 }]}>Flaş İndirim</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Sepetim')}>
-              <View style={[styles.quickIcon, { backgroundColor: '#10B98115' }]}><Text style={{fontSize: 24}}>🤝</Text></View>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('AllProducts', { categoryName: 'Bağış' })}>
+              <View style={[styles.quickIcon, { backgroundColor: '#10B98115' }]}><Text style={{ fontSize: 24 }}>🤝</Text></View>
               <Text style={[styles.quickText, { color: theme.text2 }]}>Bağışla</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
-              <View style={[styles.quickIcon, { backgroundColor: '#F59E0B15' }]}><Text style={{fontSize: 24}}>⭐</Text></View>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('AllProducts', { categoryName: 'Popüler' })}>
+              <View style={[styles.quickIcon, { backgroundColor: '#F59E0B15' }]}><Text style={{ fontSize: 24 }}>⭐</Text></View>
               <Text style={[styles.quickText, { color: theme.text2 }]}>Popüler</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('Kategoriler')}>
-              <View style={[styles.quickIcon, { backgroundColor: '#EC489915' }]}><Text style={{fontSize: 24}}>📍</Text></View>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('AllProducts', { categoryName: 'Yakınımda' })}>
+              <View style={[styles.quickIcon, { backgroundColor: '#EC489915' }]}><Text style={{ fontSize: 24 }}>📍</Text></View>
               <Text style={[styles.quickText, { color: theme.text2 }]}>Yakınımda</Text>
             </TouchableOpacity>
           </View>
@@ -286,8 +353,8 @@ export default function HomeScreen({ navigation }: any) {
             {categories.map((category) => {
               const config = categoryConfigs[category.name.toLowerCase()] || categoryConfigs['default'];
               return (
-                <TouchableOpacity 
-                  key={category.id} 
+                <TouchableOpacity
+                  key={category.id}
                   style={styles.categoryItem}
                   onPress={() => navigation.navigate('AllProducts', { categoryName: category.name })}
                 >
@@ -310,29 +377,38 @@ export default function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           <View style={styles.productsGrid}>
-            {filteredProducts.map((product) => (
-              <TouchableOpacity 
-                key={product.id} 
-                style={[styles.productCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                onPress={() => navigation.navigate('ProductDetail', { product })}
-              >
-                <View style={[styles.productImageContainer, { backgroundColor: theme.bg }]}>
-                   <Text style={{ fontSize: 40 }}>{categoryConfigs[product.category.toLowerCase()]?.icon || '📦'}</Text>
-                </View>
-                <View style={styles.productInfo}>
-                  <Text style={[styles.productName, { color: theme.text1 }]} numberOfLines={1}>{product.name}</Text>
-                  <Text style={[styles.productPrice, { color: theme.accent }]}>{product.price.toLocaleString('tr-TR')} ₺</Text>
-                  <View style={styles.productActions}>
-                    <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#3B82F6' }]} onPress={() => handleAddToCart(product)}>
-                      <Text style={[styles.actionButtonText, { color: 'white' }]}>Sepet</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10B981' }]} onPress={() => handleDonateProduct(product)}>
-                      <Text style={[styles.actionButtonText, { color: 'white' }]}>Bağış</Text>
+            {filteredProducts.map((product) => {
+              const isFavorite = favorites.includes(product.id);
+              return (
+                <TouchableOpacity
+                  key={product.id}
+                  style={[styles.productCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                  onPress={() => navigation.navigate('ProductDetail', { product })}
+                >
+                  <View style={[styles.productImageContainer, { backgroundColor: theme.bg }]}>
+                    <Text style={{ fontSize: 40 }}>{categoryConfigs[product.category.toLowerCase()]?.icon || '📦'}</Text>
+                    <TouchableOpacity
+                      style={{ position: 'absolute', top: 10, right: 10 }}
+                      onPress={() => toggleFavorite(product.id)}
+                    >
+                      <Text style={{ fontSize: 20, color: isFavorite ? '#EF4444' : theme.text3 }}>{isFavorite ? '❤️' : '🤍'}</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                  <View style={styles.productInfo}>
+                    <Text style={[styles.productName, { color: theme.text1 }]} numberOfLines={1}>{product.name}</Text>
+                    <Text style={[styles.productPrice, { color: theme.accent }]}>{product.price.toLocaleString('tr-TR')} ₺</Text>
+                    <View style={styles.productActions}>
+                      <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#3B82F6' }]} onPress={() => handleAddToCart(product)}>
+                        <Text style={[styles.actionButtonText, { color: 'white' }]}>Sepet</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10B981' }]} onPress={() => handleDonateProduct(product)}>
+                        <Text style={[styles.actionButtonText, { color: 'white' }]}>Bağış</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )
+            })}
           </View>
 
           {/* Campaigns Section */}
@@ -340,8 +416,8 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🙏 BAĞIŞ KAMPANYALARI</Text>
           </View>
           {campaigns.map((campaign) => (
-            <View 
-              key={campaign.id} 
+            <View
+              key={campaign.id}
               style={[styles.campaignCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
             >
               <View style={styles.campaignHeader}>
@@ -354,7 +430,7 @@ export default function HomeScreen({ navigation }: any) {
                     {campaign.raisedCount} / {campaign.targetCount} {campaign.unit} toplandı
                   </Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.donateButton, { backgroundColor: theme.accent }]}
                   onPress={() => handleDonateCampaign(campaign)}
                 >
@@ -362,19 +438,19 @@ export default function HomeScreen({ navigation }: any) {
                 </TouchableOpacity>
               </View>
               <View style={[styles.progressBarContainer, { backgroundColor: theme.bg }]}>
-                <View 
+                <View
                   style={[
-                    styles.progressBar, 
-                    { 
-                      backgroundColor: theme.accent, 
-                      width: `${Math.min(100, (campaign.raisedCount / campaign.targetCount) * 100)}%` 
+                    styles.progressBar,
+                    {
+                      backgroundColor: theme.accent,
+                      width: `${Math.min(100, (campaign.raisedCount / campaign.targetCount) * 100)}%`
                     }
-                  ]} 
+                  ]}
                 />
               </View>
             </View>
           ))}
-          
+
           <View style={{ height: 20 }} />
         </View>
       </ScrollView>
@@ -388,8 +464,8 @@ export default function HomeScreen({ navigation }: any) {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
-            <TouchableOpacity 
-              style={styles.closeModal} 
+            <TouchableOpacity
+              style={styles.closeModal}
               onPress={() => setModalVisible(false)}
             >
               <Text style={{ fontSize: 20, color: theme.text3 }}>✕</Text>
@@ -399,18 +475,18 @@ export default function HomeScreen({ navigation }: any) {
             </View>
             <Text style={[styles.modalTitle, { color: theme.text1 }]}>{modalContent.title}</Text>
             <Text style={[styles.modalMessage, { color: theme.text2 }]}>{modalContent.message}</Text>
-            
+
             <View style={styles.modalActions}>
               {modalContent.title === 'Çıkış' && (
-                <TouchableOpacity 
-                  style={[styles.modalButton, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]} 
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}
                   onPress={() => setModalVisible(false)}
                 >
                   <Text style={[styles.closeButtonText, { color: theme.text2 }]}>İptal</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity 
-                style={[styles.modalButton, { backgroundColor: theme.accent }]} 
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.accent }]}
                 onPress={async () => {
                   setModalVisible(false);
                   if (modalContent.title === 'Çıkış') {

@@ -167,6 +167,14 @@ export interface ProductResponse {
   isDonationProduct: boolean;
   createdAt: string;
   isActive: boolean;
+  // --- New Fields ---
+  oldPrice?: number;
+  isFlashSale?: boolean;
+  isNewSeason?: boolean;
+  salesCount: number;
+  viewCount?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ProductCreateRequest {

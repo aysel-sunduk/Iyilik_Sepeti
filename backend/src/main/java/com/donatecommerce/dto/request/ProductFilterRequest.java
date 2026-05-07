@@ -41,6 +41,12 @@ public class ProductFilterRequest {
     @Schema(description = "Sıralama yönü", example = "DESC", allowableValues = {"ASC", "DESC"})
     private String sortDirection = "DESC";
     
+    @Schema(description = "Yeni sezon ürünü mü?", example = "true")
+    private Boolean isNewSeason;
+    
+    @Schema(description = "Flaş indirim ürünü mü?", example = "true")
+    private Boolean isFlashSale;
+    
     // Getters and Setters
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
@@ -74,4 +80,10 @@ public class ProductFilterRequest {
     
     public String getSortDirection() { return sortDirection; }
     public void setSortDirection(String sortDirection) { this.sortDirection = sortDirection; }
+    
+    public Boolean getIsNewSeason() { return isNewSeason; }
+    public void setIsNewSeason(Boolean isNewSeason) { this.isNewSeason = isNewSeason; }
+    
+    public Boolean getIsFlashSale() { return isFlashSale; }
+    public void setIsFlashSale(Boolean isFlashSale) { this.isFlashSale = isFlashSale; }
 }

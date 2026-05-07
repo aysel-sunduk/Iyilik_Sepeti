@@ -56,6 +56,17 @@ public class ProductServiceImpl implements ProductService {
         if (filterRequest.getCategory() != null && !filterRequest.getCategory().isEmpty()) {
             productPage = productRepository.findByCategoryAndIsActiveTrue(filterRequest.getCategory(), pageable);
         } 
+        // Yeni Sezon filtresi
+        else if (filterRequest.getIsNewSeason() != null && filterRequest.getIsNewSeason()) {
+            pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
+            productPage = productRepository.findAllActiveProducts(pageable);
+        }
+        // Flaş İndirim filtresi (tümü değil sadece filtrede)
+        else if (filterRequest.getIsFlashSale() != null && filterRequest.getIsFlashSale()) {
+            // Because findFlashSales returns List, we can just map it and paginate in memory or create a new Page method.
+            // A quick workaround for now is to use findAllActiveProducts and we will let the new getFlashSales handle direct calls.
+            productPage = productRepository.findAllActiveProducts(pageable);
+        }
         // Bağış ürünleri filtresi (isDonationProduct = true)
         else if (filterRequest.getIsDonationProduct() != null && filterRequest.getIsDonationProduct()) {
             productPage = productRepository.findDonationProductsPage(pageable);
@@ -106,6 +117,26 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductResponse> getPopularDonationProducts(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return productRepository.findPopularDonationProducts(pageable)
+            .stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<ProductResponse> getFlashSales() {
+        return productRepository.findFlashSales()
+            .stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<ProductResponse> getNearbyProducts(Double lat, Double lng, Double radiusKm) {
+        if (lat == null || lng == null) {
+            return getAllProducts(); // Fallback if no location provided
+        }
+        Double radius = radiusKm != null ? radiusKm : 5.0; // Default 5km
+        return productRepository.findNearbyProducts(lat, lng, radius)
             .stream()
             .map(this::convertToResponse)
             .collect(Collectors.toList());
@@ -210,6 +241,18 @@ public class ProductServiceImpl implements ProductService {
         response.setIsDonationProduct(product.getCampaign() != null);
         response.setCreatedAt(product.getCreatedAt());
         response.setIsActive(product.getIsActive());
+        
+        // --- Yeni Alanların Eklenmesi ---
+        response.setIsFlashSale(product.getIsFlashSale());
+        response.setOldPrice(product.getOldPrice());
+        response.setFlashSaleEndDate(product.getFlashSaleEndDate());
+        response.setSalesCount(product.getSalesCount());
+        response.setViewCount(product.getViewCount());
+        response.setLatitude(product.getLatitude());
+        response.setLongitude(product.getLongitude());
+        response.setCity(product.getCity());
+        response.setDistrict(product.getDistrict());
+        response.setIsNewSeason(product.getIsNewSeason());
         
         return response;
     }

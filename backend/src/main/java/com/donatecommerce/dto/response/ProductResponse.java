@@ -26,4 +26,16 @@ public class ProductResponse {
     private Boolean isDonationProduct;
     private LocalDateTime createdAt;
     private Boolean isActive;
+    
+    // --- Yeni Alanlar ---
+    private Boolean isFlashSale;
+    private BigDecimal oldPrice;
+    private LocalDateTime flashSaleEndDate;
+    private Integer salesCount;
+    private Integer viewCount;
+    private Double latitude;
+    private Double longitude;
+    private String city;
+    private String district;
+    private Boolean isNewSeason;
 }

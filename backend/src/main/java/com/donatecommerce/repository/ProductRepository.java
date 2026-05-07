@@ -52,5 +52,16 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                                       @Param("maxPrice") BigDecimal maxPrice, 
                                       Pageable pageable);
 
+    // Flaş İndirim
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.isDeleted = false AND p.isFlashSale = true AND p.flashSaleEndDate > CURRENT_TIMESTAMP")
+    List<Product> findFlashSales();
+
+    // Yakınımda (Native Query with Haversine formula)
+    @Query(value = "SELECT * FROM products p WHERE p.is_active = true AND p.is_deleted = false AND " +
+           "p.latitude IS NOT NULL AND p.longitude IS NOT NULL AND " +
+           "(6371 * acos(cos(radians(:lat)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(:lng)) + sin(radians(:lat)) * sin(radians(p.latitude)))) <= :radiusKm", 
+           nativeQuery = true)
+    List<Product> findNearbyProducts(@Param("lat") Double lat, @Param("lng") Double lng, @Param("radiusKm") Double radiusKm);
+
     boolean existsByName(String name);
 }

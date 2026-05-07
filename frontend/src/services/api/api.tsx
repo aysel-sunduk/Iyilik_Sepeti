@@ -100,6 +100,12 @@ export const productApi = {
   getPopularDonationProducts: (limit: number = 6) => 
     apiClient.get<ProductResponse[]>('/api/products/donation/popular', { params: { limit } }),
     
+  getFlashSales: () => 
+    apiClient.get<ProductResponse[]>('/api/products/flash-sales'),
+    
+  getNearbyProducts: (lat: number, lng: number, radiusKm: number = 5.0) => 
+    apiClient.get<ProductResponse[]>('/api/products/nearby', { params: { lat, lng, radiusKm } }),
+    
   getByCategory: (category: string) => 
     apiClient.get<ProductResponse[]>(`/api/products/category/${category}`),
     
@@ -176,6 +182,15 @@ export const cartApi = {
     apiClient.delete('/api/cart/clear'),
 };
 
+// Favorite Endpoints
+export const favoriteApi = {
+  getProducts: () => 
+    apiClient.get<any>('/api/favorites/products'),
+    
+  toggle: (productId: string) => 
+    apiClient.post<any>(`/api/favorites/products/${productId}`),
+};
+
 // Default export containing all APIs
 const api = {
   auth: authApi,
@@ -185,6 +200,7 @@ const api = {
   orders: orderApi,
   user: userApi,
   cart: cartApi,
+  favorites: favoriteApi,
 };
 
 export default api;
