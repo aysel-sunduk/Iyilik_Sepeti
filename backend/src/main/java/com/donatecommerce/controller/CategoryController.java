@@ -27,6 +27,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(origins = "*")
@@ -88,6 +90,7 @@ public class CategoryController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Yeni kategori oluştur")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
             @RequestBody CategoryCreateRequest request,
@@ -103,6 +106,7 @@ public class CategoryController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Kategori güncelle")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable UUID id,
@@ -118,6 +122,7 @@ public class CategoryController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Kategori sil (soft delete)")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(
             @PathVariable UUID id,

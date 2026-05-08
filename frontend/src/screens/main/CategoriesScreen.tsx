@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Image, Platform } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api/api';
 import { CategoryResponse as Category } from '../../services/api/types';
@@ -44,14 +44,27 @@ export default function CategoriesScreen({ navigation }: any) {
     
     return (
       <TouchableOpacity 
-        style={[styles.categoryCard, { backgroundColor: theme.surface, borderColor: theme.border + '50' }]}
+        style={[styles.categoryCard, { backgroundColor: theme.surface }]}
         onPress={() => navigation.navigate('AllProducts', { categoryName: item.name })}
       >
-        <View style={[styles.categoryIcon, { backgroundColor: config.color + '15' }]}>
-          <Text style={{ fontSize: 40 }}>{config.icon}</Text>
+        <View style={styles.imageOverlay}>
+          {item.imageUrl ? (
+            <Image 
+              source={{ uri: item.imageUrl }} 
+              style={StyleSheet.absoluteFill} 
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.categoryIcon, { backgroundColor: config.color + '15' }]}>
+              <Text style={{ fontSize: 32 }}>{config.icon}</Text>
+            </View>
+          )}
+          <View style={styles.gradientOverlay} />
         </View>
-        <Text style={[styles.categoryName, { color: theme.text1 }]}>{item.name}</Text>
-        <Text style={[styles.productCount, { color: theme.text4 }]}>Ürünleri İncele →</Text>
+        <View style={styles.textContainer}>
+          <Text style={[styles.categoryName, { color: 'white' }]}>{item.name}</Text>
+          <Text style={[styles.productCount, { color: 'rgba(255,255,255,0.8)' }]}>Ürünleri Keşfet</Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -87,11 +100,42 @@ export default function CategoriesScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: Platform.OS === 'android' ? 45 : 60 },
   headerTitle: { fontSize: 20, fontWeight: 'bold' },
   list: { padding: 16 },
-  categoryCard: { flex: 1, alignItems: 'center', padding: 20, margin: 8, borderRadius: 20 },
-  categoryIcon: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  categoryName: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  productCount: { fontSize: 11 },
+  categoryCard: { 
+    flex: 1, 
+    height: 180,
+    margin: 8, 
+    borderRadius: 24,
+    overflow: 'hidden',
+    elevation: 5,
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFill,
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  textContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 15,
+  },
+  categoryIcon: { 
+    width: 60, 
+    height: 60, 
+    borderRadius: 30, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  categoryName: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 4,
+  },
+  productCount: { 
+    fontSize: 12,
+  },
 });

@@ -5,6 +5,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  role?: string;
   iyilikBalance?: number;
   walletBalance?: number;
 }

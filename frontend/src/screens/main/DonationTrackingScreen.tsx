@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 

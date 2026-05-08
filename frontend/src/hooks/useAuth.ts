@@ -56,7 +56,7 @@ export const useAuth = () => {
         email: response.email,
         firstName: response.firstName,
         lastName: response.lastName,
-        //role: response.role
+        role: response.role,
       }));
       
       // Alert.alert('Başarılı', 'Hoş geldin kahraman 🦸'); // Removed intrusive alert
@@ -94,7 +94,7 @@ export const useAuth = () => {
         email: 'bio@heyva.com',
         firstName: 'Bio',
         lastName: 'User',
-        //role: 'USER'
+        role: 'USER',
       }));
       return true;
     } catch (error) {

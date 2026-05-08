@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @RequiredArgsConstructor
+@SuppressWarnings("deprecation")
 public class AuthConfig {
 
     private final CustomUserDetailsService userDetailsService;

@@ -2,7 +2,6 @@ package com.donatecommerce.config;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
@@ -16,6 +15,7 @@ import com.donatecommerce.repository.CampaignRepository;
 import com.donatecommerce.repository.CategoryRepository;
 import com.donatecommerce.repository.ProductRepository;
 @Component
+@SuppressWarnings("null")
 public class DataInitializer implements CommandLineRunner {
 
     private final ProductRepository productRepository;
@@ -44,24 +44,28 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedOrUpdateCategories() {
-        // Eski isim -> Yeni isim haritası
-        updateCategoryName("Gıda", "Temel Gıda");
-        updateCategoryName("gıda", "Temel Gıda");
-        updateCategoryName("Giyim", "Giyim & Aksesuar");
-        updateCategoryName("giyim", "Giyim & Aksesuar");
-        updateCategoryName("Hijyen", "Temizlik & Hijyen");
-        updateCategoryName("hijyen", "Temizlik & Hijyen");
-        updateCategoryName("Çocuk", "Anne & Çocuk");
-        updateCategoryName("çocuk", "Anne & Çocuk");
-        updateCategoryName("Hayvan", "Evcil Hayvan");
-        updateCategoryName("hayvan", "Evcil Hayvan");
-        updateCategoryName("Hayvan Hakları", "Evcil Hayvan");
-        updateCategoryName("Eğitim", "Eğitim & Kırtasiye");
+        // Kategori güncellemeleri ve yeni görsellerin atanması
+        syncCategory("Temel Gıda", "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1074&auto=format&fit=crop");
+        syncCategory("Eğitim & Kırtasiye", "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=1170&auto=format&fit=crop");
+        syncCategory("Evcil Hayvan", "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=1169&auto=format&fit=crop");
+        syncCategory("Giyim & Aksesuar", "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=1170&auto=format&fit=crop");
+        syncCategory("Temizlik & Hijyen", "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1170&auto=format&fit=crop");
+        syncCategory("Anne & Çocuk", "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?q=80&w=1175&auto=format&fit=crop");
 
         // Eğer hiç kategori yoksa temel seti oluştur
         if (categoryRepository.count() == 0) {
             seedCategories();
         }
+    }
+
+    private void syncCategory(String name, String imageUrl) {
+        categoryRepository.findByName(name).ifPresentOrElse(category -> {
+            category.setImageUrl(imageUrl);
+            categoryRepository.save(category);
+            System.out.println("Kategori görseli güncellendi: " + name);
+        }, () -> {
+            // Eğer kategori yoksa, seedCategories zaten oluşturacak, burada bir şey yapmaya gerek yok
+        });
     }
 
     private void updateCategoryName(String oldName, String newName) {
@@ -77,6 +81,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("Temel Gıda")
                 .nameSlug("temel-gida")
                 .description("Temel gıda ihtiyaçları")
+                .imageUrl("https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1074&auto=format&fit=crop")
                 .type(CategoryType.BOTH)
                 .isActive(true)
                 .build();
@@ -85,6 +90,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("Eğitim & Kırtasiye")
                 .nameSlug("egitim-kirtasiye")
                 .description("Eğitim ve kırtasiye malzemeleri")
+                .imageUrl("https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=1170&auto=format&fit=crop")
                 .type(CategoryType.BOTH)
                 .isActive(true)
                 .build();
@@ -93,6 +99,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("Evcil Hayvan")
                 .nameSlug("evcil-hayvan")
                 .description("Sokak hayvanları ve evcil dostlarımız için yardımlar")
+                .imageUrl("https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=1169&auto=format&fit=crop")
                 .type(CategoryType.DONATION)
                 .isActive(true)
                 .build();
@@ -101,6 +108,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("Giyim & Aksesuar")
                 .nameSlug("giyim-aksesuar")
                 .description("İhtiyaç sahipleri için giyim yardımları")
+                .imageUrl("https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=1170&auto=format&fit=crop")
                 .type(CategoryType.BOTH)
                 .isActive(true)
                 .build();
@@ -109,6 +117,7 @@ public class DataInitializer implements CommandLineRunner {
                 .name("Temizlik & Hijyen")
                 .nameSlug("temizlik-hijyen")
                 .description("Kişisel temizlik ve hijyen ürünleri")
+                .imageUrl("https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1170&auto=format&fit=crop")
                 .type(CategoryType.BOTH)
                 .isActive(true)
                 .build();

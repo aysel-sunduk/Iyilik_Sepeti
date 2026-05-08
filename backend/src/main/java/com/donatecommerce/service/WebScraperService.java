@@ -1,29 +1,31 @@
 package com.donatecommerce.service;
 
-import com.donatecommerce.entity.Category;
-import com.donatecommerce.entity.Product;
-import com.donatecommerce.repository.CategoryRepository;
-import com.donatecommerce.repository.ProductRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.donatecommerce.entity.Product;
+import com.donatecommerce.repository.ProductRepository;
+
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class WebScraperService {
 
-    private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    
+    private static final Logger log = LoggerFactory.getLogger(WebScraperService.class);
+
+    public WebScraperService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
 
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
@@ -156,7 +158,5 @@ public class WebScraperService {
             list.add(productRepository.save(p));
             log.info("Saved product: {}", name);
         }
-    }
-
     }
 }

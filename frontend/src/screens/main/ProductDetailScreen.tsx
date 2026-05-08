@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,15 +13,57 @@ import { useTheme } from '../../context/ThemeContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, syncCartItem } from '../../redux/slices/cartSlice';
 import { AppDispatch, RootState } from '../../redux/store';
+import api from '../../services/api/api';
 
 const { width } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ route, navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useDispatch<AppDispatch>();
-   const { product } = route.params;
-   const cartItems = useSelector((state: RootState) => state.cart.items);
-   const [quantity, setQuantity] = useState(1);
+  const { product } = route.params;
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const user = useSelector((state: RootState) => state.auth.user);
+  
+  const [quantity, setQuantity] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, []);
+
+  const checkFavoriteStatus = async () => {
+    if (!user) return;
+    try {
+      const response: any = await api.favorites.getProducts();
+      // ApiResponse yapısı: { success: true, data: [...], message: "..." }
+      const favs = response.data || response;
+      const favoritesList = Array.isArray(favs) ? favs : (favs.data || []);
+      setIsFavorite(favoritesList.some((f: any) => f.id === product.id));
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      Alert.alert('Giriş Yapın', 'Favorilere eklemek için önce giriş yapmalısınız.');
+      return;
+    }
+
+    if (isToggling) return;
+
+    try {
+      setIsToggling(true);
+      await api.favorites.toggle(product.id);
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.error('Favorite toggle error:', error);
+      Alert.alert('Hata', 'Favori işlemi gerçekleştirilemedi.');
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   const handleAddToCart = (type: 'self' | 'donation') => {
     dispatch(addToCart({
@@ -34,11 +76,9 @@ export default function ProductDetailScreen({ route, navigation }: any) {
       type: type
     }));
 
-    // Mevcut miktarı Redux'tan buluyoruz
     const existingItem = cartItems.find(item => item.id === product.id && item.type === type);
     const newTotalQuantity = (existingItem?.quantity || 0) + quantity;
 
-    // Backend Senkronizasyonu (Veritabanında kalıcı olması için TOPLAM miktarı gönderiyoruz)
     dispatch(syncCartItem({
       id: product.id,
       quantity: newTotalQuantity,
@@ -58,7 +98,6 @@ export default function ProductDetailScreen({ route, navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header Image Area */}
         <View style={[styles.imageArea, { backgroundColor: theme.surface }]}>
           <TouchableOpacity 
             style={styles.backButton} 
@@ -66,6 +105,7 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           >
             <Text style={{ fontSize: 24, color: theme.text1 }}>←</Text>
           </TouchableOpacity>
+          
           {product.imageUrl?.startsWith('http') ? (
             <Image 
               source={{ uri: product.imageUrl }} 
@@ -75,14 +115,20 @@ export default function ProductDetailScreen({ route, navigation }: any) {
           ) : (
             <Text style={styles.productEmoji}>{product.imageUrl || '📦'}</Text>
           )}
+
           <View style={styles.imageActions}>
-            <TouchableOpacity style={styles.iconBtn}><Text style={{fontSize: 20}}>❤️</Text></TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.iconBtn, isFavorite && { backgroundColor: theme.accent + '20' }]} 
+              onPress={handleToggleFavorite}
+              disabled={isToggling}
+            >
+              <Text style={{fontSize: 20}}>{isFavorite ? '❤️' : '🤍'}</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn}><Text style={{fontSize: 20}}>🔗</Text></TouchableOpacity>
           </View>
         </View>
 
         <View style={[styles.content, { backgroundColor: theme.bg }]}>
-          {/* Product Info */}
           <View style={styles.infoSection}>
             <Text style={[styles.productName, { color: theme.text1 }]}>{product.name}</Text>
             <View style={styles.ratingRow}>
@@ -93,7 +139,6 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             <Text style={[styles.kargoInfo, { color: theme.text4 }]}>Kargo: ₺30 (İyilik Express)</Text>
           </View>
 
-          {/* Action Row - Shopping Focused */}
           <View style={styles.actionRow}>
             <TouchableOpacity 
               style={[styles.buyBtn, { backgroundColor: theme.accent }]}
@@ -109,13 +154,11 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Social Proof / Trust */}
           <View style={styles.trustRow}>
             <Text style={{fontSize: 16}}>🚚</Text>
             <Text style={[styles.trustText, { color: theme.text3 }]}>Yarın Kapında (Ücretsiz Kargo)</Text>
           </View>
 
-          {/* Tabs / Details */}
           <View style={styles.detailsSection}>
             <Text style={[styles.detailTitle, { color: theme.text1 }]}>📝 Ürün Açıklaması</Text>
             <Text style={[styles.detailText, { color: theme.text2 }]}>
@@ -133,18 +176,16 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             </View>
           </View>
 
-          {/* Subtle Impact Notice */}
           <View style={[styles.impactNotice, { backgroundColor: theme.bg }]}>
             <Text style={[styles.impactText, { color: '#10B981' }]}>
               ✨ Bu ürünü hediye ederek bir çocuğun okul masrafına destek olabilirsin.
             </Text>
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 120 }} />
         </View>
       </ScrollView>
 
-      {/* Bottom Floating Bar */}
       <View style={[styles.bottomBar, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
         <View style={styles.quantityControl}>
           <TouchableOpacity onPress={() => setQuantity(Math.max(1, quantity - 1))} style={styles.qBtn}>

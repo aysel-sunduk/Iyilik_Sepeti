@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/campaigns")
 @CrossOrigin(origins = "*")
@@ -71,6 +73,7 @@ public class CampaignController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Yeni kampanya oluştur")
     public ResponseEntity<ApiResponse<CampaignResponse>> createCampaign(
             @RequestBody CampaignCreateRequest request,
@@ -86,6 +89,7 @@ public class CampaignController {
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Kampanya güncelle")
     public ResponseEntity<ApiResponse<CampaignResponse>> updateCampaign(
             @PathVariable UUID id,
@@ -101,6 +105,7 @@ public class CampaignController {
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Kampanya sil")
     public ResponseEntity<ApiResponse<Void>> deleteCampaign(
             @PathVariable UUID id,

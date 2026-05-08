@@ -25,6 +25,7 @@ import com.donatecommerce.repository.CampaignRepository;
 import com.donatecommerce.repository.ProductRepository;
 
 @Service
+@SuppressWarnings("null")
 public class ProductServiceImpl implements ProductService {
     
     @Autowired

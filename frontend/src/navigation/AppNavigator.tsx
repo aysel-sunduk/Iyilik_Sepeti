@@ -24,12 +24,14 @@ import OrdersScreen from '../screens/main/OrdersScreen';
 import AddressesScreen from '../screens/main/AddressesScreen';
 import CardsScreen from '../screens/main/CardsScreen';
 import AllProductsScreen from '../screens/main/AllProductsScreen';
+import AdminNavigator from './AdminNavigator';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
   const { theme } = useTheme();
+  const user = useSelector((state: RootState) => state.auth.user);
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   
@@ -53,6 +55,7 @@ function TabNavigator() {
           else if (route.name === 'Bağışlarım') icon = '❤️';
           else if (route.name === 'Sepetim') icon = '🛒';
           else if (route.name === 'Profil') icon = '👤';
+          else if (route.name === 'Yönetim') icon = '🛡️';
           return <Text style={{ fontSize: size }}>{icon}</Text>;
         },
       })}
@@ -69,6 +72,15 @@ function TabNavigator() {
         }} 
       />
       <Tab.Screen name="Profil" component={ProfileScreen} />
+      {user?.role === 'ADMIN' && (
+        <Tab.Screen 
+          name="Yönetim" 
+          component={AdminNavigator} 
+          options={{
+            tabBarLabel: 'Yönetim',
+          }}
+        />
+      )}
     </Tab.Navigator>
   );
 }
@@ -89,6 +101,7 @@ function MainStack() {
       <Stack.Screen name="Cards" component={CardsScreen} />
       <Stack.Screen name="AllProducts" component={AllProductsScreen} />
       <Stack.Screen name="OrderDetail" component={OrderTrackingScreen} />
+      <Stack.Screen name="Admin" component={AdminNavigator} />
     </Stack.Navigator>
   );
 }

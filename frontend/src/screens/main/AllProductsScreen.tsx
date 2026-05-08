@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   Dimensions,
   ToastAndroid,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useDispatch } from 'react-redux';
@@ -73,9 +74,9 @@ export default function AllProductsScreen({ navigation, route }: any) {
       setLoading(true);
       let productsData;
       if (activeCategory === 'Yeni Sezon') {
-        // Yeni sezon filtresi - createdAt DESC (ya da isNewSeason: true)
-        const response = await api.products.getFiltered({ sortBy: 'createdAt', sortDirection: 'DESC', isNewSeason: true });
-        productsData = response.content || response.data?.content || [];
+        // Yeni sezon filtresi - createdAt DESC
+        const response = await api.products.getFiltered({ sortBy: 'createdAt', sortDirection: 'DESC' });
+        productsData = response.content || [];
       } else if (activeCategory === 'Bağış') {
         productsData = await api.products.getDonationProducts();
       } else if (activeCategory === 'Flaş İndirim') {
@@ -144,13 +145,21 @@ export default function AllProductsScreen({ navigation, route }: any) {
       style={[styles.productCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
       onPress={() => navigation.navigate('ProductDetail', { product: item })}
     >
-      <View style={[styles.imagePlaceholder, { backgroundColor: theme.bg }]}>
-        <Text style={{ fontSize: 40 }}>{item.category.toLowerCase().includes('gıda') ? '🍎' : item.category.toLowerCase().includes('giyim') ? '👕' : '📦'}</Text>
+      <View style={[styles.imagePlaceholder, { backgroundColor: theme.bg, overflow: 'hidden' }]}>
+        {item.imageUrl ? (
+          <Image 
+            source={{ uri: item.imageUrl }} 
+            style={StyleSheet.absoluteFill} 
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={{ fontSize: 40 }}>{item.category.toLowerCase().includes('gıda') ? '🍎' : item.category.toLowerCase().includes('giyim') ? '👕' : '📦'}</Text>
+        )}
         <TouchableOpacity 
-          style={{ position: 'absolute', top: 10, right: 10 }}
+          style={{ position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 15, padding: 5 }}
           onPress={() => toggleFavorite(item.id)}
         >
-          <Text style={{ fontSize: 20, color: isFavorite ? '#EF4444' : theme.text3 }}>{isFavorite ? '❤️' : '🤍'}</Text>
+          <Text style={{ fontSize: 18, color: isFavorite ? '#EF4444' : theme.text3 }}>{isFavorite ? '❤️' : '🤍'}</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.productInfo}>

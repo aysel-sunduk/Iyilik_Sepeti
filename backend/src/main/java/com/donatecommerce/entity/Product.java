@@ -37,6 +37,7 @@ public class Product {
 
     private BigDecimal price;
 
+    @Column(columnDefinition = "TEXT")
     private String imageUrl;
 
     private Integer stockQuantity;  // Lombok -> getStockQuantity()
