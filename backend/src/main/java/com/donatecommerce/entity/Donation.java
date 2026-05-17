@@ -10,6 +10,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "donations")
 @Getter @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Donation {
 
     @Id
@@ -38,6 +41,10 @@ public class Donation {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    private String proofImageUrl;
+    private String beneficiary;
+
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime deliveredAt;
 }

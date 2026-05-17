@@ -46,7 +46,14 @@ public class AuthService {
 
         validatePhoneFormat(request.getPhone());
 
-        Role defaultRole = resolveDefaultRole();
+        Role userRole;
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            userRole = roleRepository.findByName(request.getRole())
+                    .or(() -> roleRepository.findByName("ROLE_" + request.getRole().toUpperCase()))
+                    .orElseGet(this::resolveDefaultRole);
+        } else {
+            userRole = resolveDefaultRole();
+        }
 
         User user = new User();
         user.setEmail(normalizedEmail);
@@ -54,7 +61,7 @@ public class AuthService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
-        user.setRole(defaultRole);
+        user.setRole(userRole);
         user.setPhoneVerified(Boolean.FALSE);
         user.setIsActive(Boolean.TRUE);
         user.setIsDeleted(Boolean.FALSE);

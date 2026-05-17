@@ -127,7 +127,11 @@ class ApiClient {
     try {
       const refreshToken = await this.getRefreshToken();
       if (refreshToken) {
-        await this.client.post('/auth/logout', { refreshToken });
+        try {
+          await this.client.post('/auth/logout', { refreshToken });
+        } catch (e) {
+          console.log('Logout API failed, but will clean up local storage');
+        }
       }
       await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
     } catch (error) {

@@ -69,8 +69,8 @@ export default function CheckoutScreen({ navigation }: any) {
 
   const handlePlaceOrder = async () => {
     // 1. Adres Validasyonu
-    if (selfItems.length > 0 && !selectedAddressId) {
-      Alert.alert('Eksik Bilgi', 'Lütfen bir teslimat adresi seçin.');
+    if (!selectedAddressId) {
+      Alert.alert('Eksik Bilgi', 'Lütfen bir fatura/teslimat adresi seçin.');
       return;
     }
 
@@ -96,6 +96,17 @@ export default function CheckoutScreen({ navigation }: any) {
       setLoading(true);
 
       // 3. Veriyi Backend Formatına Hazırla
+      let finalOrderType = isGift ? "GIFT" : "PERSONAL";
+      let finalReceiverName = isGift ? friendName : (addresses.find(a => a.id === selectedAddressId)?.fullName || "");
+      let finalGiftMessage = isGift ? "Senin adına iyilik yaptık! 🎁" : "";
+
+      const donationWithCert = donationItems.find(item => item.donorName);
+      if (donationWithCert) {
+         finalOrderType = "GIFT";
+         finalReceiverName = donationWithCert.donorName || "";
+         finalGiftMessage = donationWithCert.message || "";
+      }
+
       const orderData = {
         items: cartItems.map(item => ({
           productId: item.id,
@@ -104,9 +115,9 @@ export default function CheckoutScreen({ navigation }: any) {
         shippingAddressId: selectedAddressId,
         paymentMethod: paymentMethod === 'wallet' ? 'WALLET' : 'CREDIT_CARD',
         paymentCardId: paymentMethod === 'card' ? selectedCardId : null,
-        orderType: isGift ? "GIFT" : "PERSONAL",
-        receiverName: isGift ? friendName : (addresses.find(a => a.id === selectedAddressId)?.fullName || ""),
-        giftMessage: isGift ? "Senin adına iyilik yaptık! 🎁" : "",
+        orderType: finalOrderType,
+        receiverName: finalReceiverName,
+        giftMessage: finalGiftMessage,
         roundUpAmount: isRoundUp ? roundUpAmount : 0.0 // Backend'e bağış miktarını gönderiyoruz
       };
 
@@ -204,14 +215,13 @@ export default function CheckoutScreen({ navigation }: any) {
         </View>
 
         {/* Delivery Address Section */}
-        {selfItems.length > 0 && (
-          <View style={[styles.card, { backgroundColor: theme.surface }]}>
-            <View style={styles.cardHeader}>
-              <Text style={[styles.cardTitle, { color: theme.text1 }]}>📍 Teslimat Adresi</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('AddAddress')}>
-                <Text style={{ color: theme.accent, fontWeight: 'bold' }}>+ Yeni Ekle</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={[styles.card, { backgroundColor: theme.surface }]}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: theme.text1 }]}>📍 Fatura / Teslimat Adresi</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('AddAddress')}>
+              <Text style={{ color: theme.accent, fontWeight: 'bold' }}>+ Yeni Ekle</Text>
+            </TouchableOpacity>
+          </View>
             
             {fetchingData ? (
               <ActivityIndicator color={theme.accent} />
@@ -236,8 +246,7 @@ export default function CheckoutScreen({ navigation }: any) {
             ) : (
               <Text style={{ color: theme.text3, marginTop: 10 }}>Henüz bir adres eklemediniz.</Text>
             )}
-          </View>
-        )}
+        </View>
 
         {/* Payment Methods */}
         <View style={[styles.card, { backgroundColor: theme.surface }]}>

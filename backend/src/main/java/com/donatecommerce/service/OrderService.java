@@ -50,6 +50,7 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final RefundRepository refundRepository;
     private final UserRepository userRepository;
+    private final DonationService donationService;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String email) {
@@ -170,6 +171,9 @@ public class OrderService {
             item.setOrder(order);
             orderItemRepository.save(item);
         }
+
+        // Bağış kayıtlarını oluştur
+        donationService.createDonationsFromOrder(order);
 
         // Ödeme başarılı simülasyonu
         payment.setStatus("success");

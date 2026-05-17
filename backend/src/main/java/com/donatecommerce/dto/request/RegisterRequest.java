@@ -26,4 +26,6 @@ public class RegisterRequest {
 
     @Schema(example = "05555555555")
     private String phone;
+
+    private String role;
 }

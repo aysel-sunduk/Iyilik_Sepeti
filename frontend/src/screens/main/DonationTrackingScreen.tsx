@@ -18,7 +18,7 @@ export default function DonationTrackingScreen() {
   const fetchDonations = async () => {
     try {
       setLoading(true);
-      const data = await api.orders.getMyOrders();
+      const data = await api.donations.getMyDonations();
       setDonations(data);
     } catch (error) {
       console.error('Bağışlar çekilemedi:', error);
@@ -99,14 +99,13 @@ export default function DonationTrackingScreen() {
         refreshing={loading}
         onRefresh={fetchDonations}
         renderItem={({ item }) => {
-          const firstItem = item.items && item.items.length > 0 ? item.items[0] : null;
           const status = item.status?.toLowerCase();
           
           return (
             <View style={[styles.card, { backgroundColor: theme.surface }]}>
               <View style={styles.cardHeader}>
                 <Text style={[styles.productName, { color: theme.text1 }]}>
-                  {firstItem ? firstItem.productName : 'Bağış Paketi'} {item.items?.length > 1 ? `(+${item.items.length - 1})` : ''} x{firstItem?.quantity || 1}
+                  {item.productName || 'Bağış Paketi'} x{item.quantity || 1}
                 </Text>
                 <Text style={[styles.date, { color: theme.text4 }]}>
                   {new Date(item.createdAt).toLocaleDateString('tr-TR')}
@@ -115,13 +114,13 @@ export default function DonationTrackingScreen() {
 
               {renderTimeline(status)}
 
-              {item.orderType === 'GIFT' && item.receiverName && (
+              {item.campaignTitle && (
                 <View style={[styles.friendBadge, { backgroundColor: theme.accent + '10' }]}>
                   <Text style={[styles.friendText, { color: theme.accent }]}>
-                    🎁 {item.receiverName} adına bağışlandı
+                    🚩 {item.campaignTitle}
                   </Text>
-                  {item.giftMessage && (
-                    <Text style={[styles.messageText, { color: theme.text3 }]}>"{item.giftMessage}"</Text>
+                  {item.notes && (
+                    <Text style={[styles.messageText, { color: theme.text3 }]}>"{item.notes}"</Text>
                   )}
                 </View>
               )}
@@ -130,12 +129,12 @@ export default function DonationTrackingScreen() {
 
               <View style={styles.cardFooter}>
                 <Text style={[styles.note, { color: theme.text2, flex: 1 }]}>
-                  📍 {item.shippingAddress || item.statusDescription}
+                  💰 {item.amount} TL Bağış Yapıldı
                 </Text>
-                {item.proofImage && (
+                {item.proofImageUrl && (
                   <TouchableOpacity 
                     style={[styles.proofBadge, { backgroundColor: '#10B98115' }]}
-                    onPress={() => openProofModal(item.proofImage!)}
+                    onPress={() => openProofModal(item.proofImageUrl!)}
                   >
                     <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: 12 }}>📸 Kanıt</Text>
                   </TouchableOpacity>

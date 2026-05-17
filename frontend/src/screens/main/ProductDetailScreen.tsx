@@ -148,7 +148,15 @@ export default function ProductDetailScreen({ route, navigation }: any) {
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.giftBtn, { borderColor: theme.accent }]}
-              onPress={() => handleAddToCart('donation')}
+              onPress={() => {
+                navigation.navigate('DonationFlow', {
+                  product: {
+                    ...product,
+                    isDonation: true
+                  },
+                  isCampaign: false
+                });
+              }}
             >
               <Text style={[styles.giftBtnText, { color: theme.accent }]}>Hediye Et / Bağışla</Text>
             </TouchableOpacity>

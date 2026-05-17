@@ -9,6 +9,8 @@ export interface CartItem {
   seller: string;
   quantity: number;
   type: 'self' | 'donation';
+  donorName?: string;
+  message?: string;
 }
 
 interface CartState {

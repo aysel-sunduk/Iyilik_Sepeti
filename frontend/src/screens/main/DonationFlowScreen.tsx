@@ -35,13 +35,15 @@ export default function DonationFlowScreen({ route, navigation }: any) {
     }
 
     dispatch(addToCart({
-      id: isCampaign ? campaign.id : product.id,
+      id: product.id,
       name: targetName,
       price: targetPrice,
       image: isCampaign ? (campaign.title.includes('Hayvan') ? '🐾' : '🎒') : (product.imageUrl || '🎁'),
       seller: isCampaign ? 'Bağış Kampanyası' : product.category,
       quantity: quantity,
-      type: 'donation'
+      type: 'donation',
+      donorName: donorName,
+      message: message
     }));
 
     Alert.alert(

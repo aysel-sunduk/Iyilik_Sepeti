@@ -191,6 +191,24 @@ export const favoriteApi = {
     apiClient.post<any>(`/api/favorites/products/${productId}`),
 };
 
+// Donation Endpoints
+export const donationApi = {
+  getMyDonations: () => 
+    apiClient.get<any[]>('/api/donations/my'),
+    
+  getCampaignDonations: (campaignId: string) => 
+    apiClient.get<any[]>(`/api/donations/campaign/${campaignId}`),
+
+  getAll: () => 
+    apiClient.get<any[]>('/api/donations/all'),
+
+  updateProof: (donationId: string, data: { proofImageUrl: string, beneficiary: string }) => 
+    apiClient.patch<any>(`/api/donations/${donationId}/proof`, data),
+
+  updateStatus: (donationId: string, status: string) => 
+    apiClient.patch<any>(`/api/donations/${donationId}/status`, { status }),
+};
+
 // Default export containing all APIs
 const api = {
   auth: authApi,
@@ -201,6 +219,7 @@ const api = {
   user: userApi,
   cart: cartApi,
   favorites: favoriteApi,
+  donations: donationApi,
 };
 
 export default api;

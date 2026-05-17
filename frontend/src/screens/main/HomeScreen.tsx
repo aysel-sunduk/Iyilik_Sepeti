@@ -20,7 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { RootState } from '../../redux/store';
 import { resetLoggedIn } from '../../redux/slices/authSlice';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api/api';
 import { CategoryResponse as Category, ProductResponse as Product, CampaignResponse as Campaign } from '../../services/api/types';
 import { Modal } from 'react-native';
@@ -44,8 +44,7 @@ const CartIcon = ({ color }: { color: string }) => (
 export default function HomeScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useDispatch();
-  const { logout } = useAuth();
-  const user = useSelector((state: RootState) => state.auth.user);
+  const { logout, user } = useAuth();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const userFirstName = user?.firstName ?? 'Kahraman';
   const iyilikBalance = user?.iyilikBalance ?? 0;
@@ -223,7 +222,18 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const handleDonateCampaign = (campaign: Campaign) => {
+    const campaignProduct = allProducts.find(p => p.campaign?.id === campaign.id);
+    if (!campaignProduct) {
+       showAlert('Hata', 'Bu kampanyaya ait ürün bulunamadı.', '❌');
+       return;
+    }
     navigation.navigate('DonationFlow', {
+      product: {
+        ...campaignProduct,
+        image: campaignProduct.imageUrl || campaign.imageUrl || '📦',
+        seller: 'Bağış Kampanyası',
+        isDonation: true
+      },
       campaign: campaign,
       isCampaign: true
     });
@@ -456,8 +466,16 @@ export default function HomeScreen({ navigation }: any) {
                   style={styles.categoryItem}
                   onPress={() => navigation.navigate('AllProducts', { categoryName: category.name })}
                 >
-                  <View style={[styles.categoryIconContainer, { backgroundColor: config.color + '15' }]}>
-                    <Text style={styles.categoryIcon}>{config.icon}</Text>
+                  <View style={[styles.categoryIconContainer, { backgroundColor: config.color + '15', overflow: 'hidden' }]}>
+                    {category.imageUrl ? (
+                      <Image 
+                        source={{ uri: category.imageUrl }} 
+                        style={StyleSheet.absoluteFill} 
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text style={styles.categoryIcon}>{config.icon}</Text>
+                    )}
                   </View>
                   <Text style={[styles.categoryName, { color: theme.text2 }]} numberOfLines={1}>
                     {category.name}

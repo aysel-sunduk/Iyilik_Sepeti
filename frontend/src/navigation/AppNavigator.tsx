@@ -25,6 +25,7 @@ import AddressesScreen from '../screens/main/AddressesScreen';
 import CardsScreen from '../screens/main/CardsScreen';
 import AllProductsScreen from '../screens/main/AllProductsScreen';
 import AdminNavigator from './AdminNavigator';
+import StaffNavigator from './StaffNavigator';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -56,6 +57,7 @@ function TabNavigator() {
           else if (route.name === 'Sepetim') icon = '🛒';
           else if (route.name === 'Profil') icon = '👤';
           else if (route.name === 'Yönetim') icon = '🛡️';
+          else if (route.name === 'SahaEkibi') icon = '🚚';
           return <Text style={{ fontSize: size }}>{icon}</Text>;
         },
       })}
@@ -72,12 +74,21 @@ function TabNavigator() {
         }} 
       />
       <Tab.Screen name="Profil" component={ProfileScreen} />
-      {user?.role === 'ADMIN' && (
+      {user?.role?.includes('ADMIN') && (
         <Tab.Screen 
           name="Yönetim" 
           component={AdminNavigator} 
           options={{
             tabBarLabel: 'Yönetim',
+          }}
+        />
+      )}
+      {user?.role?.includes('STAFF') && (
+        <Tab.Screen 
+          name="SahaEkibi" 
+          component={StaffNavigator} 
+          options={{
+            tabBarLabel: 'Saha Ekibi',
           }}
         />
       )}
