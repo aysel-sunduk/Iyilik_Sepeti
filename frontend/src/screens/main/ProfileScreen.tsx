@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Image, Modal } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Image, Modal, Alert, TextInput, ActivityIndicator } from 'react-native';
 import Svg, { Path, Polyline, Line } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
-import { logout } from '../../redux/slices/authSlice';
 import { RootState } from '../../redux/store';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import api from '../../services/api/api';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +34,7 @@ const LogoutIcon = ({ color }: { color: string }) => (
 export default function ProfileScreen({ navigation }: any) {
   const { theme, themeMode, setThemeMode } = useTheme();
   const dispatch = useDispatch();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   
   useFocusEffect(
     React.useCallback(() => {
@@ -45,6 +45,32 @@ export default function ProfileScreen({ navigation }: any) {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [logoutSuccessVisible, setLogoutSuccessVisible] = useState(false);
+  const [topUpModalVisible, setTopUpModalVisible] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [loadingTopUp, setLoadingTopUp] = useState(false);
+
+  const handleTopUp = async () => {
+    const numericAmount = parseFloat(topUpAmount);
+    if (!topUpAmount || isNaN(numericAmount) || numericAmount <= 0) {
+      Alert.alert('Geçersiz Tutar', 'Lütfen geçerli bir bakiye tutarı girin.');
+      return;
+    }
+
+    try {
+      setLoadingTopUp(true);
+      await api.user.topUpWallet(numericAmount);
+      await refreshUser();
+      setTopUpModalVisible(false);
+      setTopUpAmount('');
+      Alert.alert('Başarılı! 💳', `₺${numericAmount} cüzdanınıza başarıyla yüklenmiştir. Keyifli alışverişler dileriz! ✨`);
+    } catch (err: any) {
+      console.error('Wallet top up error:', err);
+      const msg = err.message || 'Bakiye yüklenirken bir sorun oluştu.';
+      Alert.alert('Hata', msg);
+    } finally {
+      setLoadingTopUp(false);
+    }
+  };
   
   // Mock Stats
   const impactPoints = 1250;
@@ -61,9 +87,9 @@ export default function ProfileScreen({ navigation }: any) {
     setLogoutSuccessVisible(true);
     
     // Show success modal for 1.5 seconds then actually logout
-    setTimeout(() => {
+    setTimeout(async () => {
       setLogoutSuccessVisible(false);
-      dispatch(logout());
+      await logout();
     }, 1500);
   };
 
@@ -74,7 +100,6 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={[styles.header, { backgroundColor: theme.surface }]}>
           <View style={styles.headerTop}>
             <Text style={[styles.headerTitle, { color: theme.text1 }]}>Profilim</Text>
-            <TouchableOpacity style={styles.settingsBtn}><Text style={{fontSize: 20}}>⚙️</Text></TouchableOpacity>
           </View>
 
           <View style={styles.profileInfo}>
@@ -109,11 +134,16 @@ export default function ProfileScreen({ navigation }: any) {
 
         {/* Impact Stats Grid */}
         <View style={styles.statsGrid}>
-          <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
+          <TouchableOpacity 
+            style={[styles.statBox, { backgroundColor: theme.surface }]}
+            onPress={() => setTopUpModalVisible(true)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.statValue}>₺{user?.walletBalance || 0}</Text>
             <Text style={[styles.statLabel, { color: theme.text3 }]}>Cüzdan Bakiyesi</Text>
+            <Text style={{ fontSize: 10, color: theme.accent, fontWeight: 'bold', marginTop: 4 }}>Bakiye Yükle ➕</Text>
             <Text style={styles.statEmoji}>💰</Text>
-          </View>
+          </TouchableOpacity>
           <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
             <Text style={[styles.statValue, { color: theme.accent }]}>₺{user?.iyilikBalance || 0}</Text>
             <Text style={[styles.statLabel, { color: theme.text3 }]}>İyilik Kumbaram</Text>
@@ -310,7 +340,137 @@ export default function ProfileScreen({ navigation }: any) {
                 </View>
               </View>
               <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 20 }]}>Başarıyla Çıkış Yapıldı</Text>
-              <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, kahraman! ✨</Text>
+              <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, keyifli alışverişler! ✨</Text>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Wallet Top Up Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={topUpModalVisible}
+          onRequestClose={() => {
+            setTopUpModalVisible(false);
+            setTopUpAmount('');
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.surface, width: '90%' }]}>
+              <TouchableOpacity 
+                style={styles.closeModal} 
+                onPress={() => {
+                  setTopUpModalVisible(false);
+                  setTopUpAmount('');
+                }}
+              >
+                <Text style={{ fontSize: 20, color: theme.text3 }}>✕</Text>
+              </TouchableOpacity>
+              
+              <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 10 }]}>Bakiye Yükle 💳</Text>
+              <Text style={{ fontSize: 13, color: theme.text3, textAlign: 'center', marginBottom: 16 }}>
+                Kayıtlı kredi kartınızdan cüzdanınıza bakiye yükleyin.
+              </Text>
+              
+              {/* Quick Select Buttons */}
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {[50, 100, 200, 500].map(val => (
+                  <TouchableOpacity
+                    key={val}
+                    style={{
+                      paddingHorizontal: 18,
+                      paddingVertical: 10,
+                      borderRadius: 14,
+                      borderWidth: 1.5,
+                      borderColor: topUpAmount === val.toString() ? theme.accent : (theme.isDark ? theme.border : '#E5E7EB'),
+                      backgroundColor: topUpAmount === val.toString() ? theme.accent : 'transparent'
+                    }}
+                    onPress={() => setTopUpAmount(val.toString())}
+                  >
+                    <Text style={{ 
+                      color: topUpAmount === val.toString() ? 'white' : theme.text1, 
+                      fontWeight: '700',
+                      fontSize: 14
+                    }}>
+                      ₺{val}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Divider */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10, width: '100%' }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: theme.isDark ? theme.border : '#E5E7EB' }} />
+                <Text style={{ marginHorizontal: 10, fontSize: 12, color: theme.text4 }}>veya</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: theme.isDark ? theme.border : '#E5E7EB' }} />
+              </View>
+              
+              <TextInput
+                style={{
+                  width: '100%',
+                  height: 50,
+                  borderWidth: 1.5,
+                  borderColor: topUpAmount && ![50,100,200,500].map(String).includes(topUpAmount) ? theme.accent : (theme.isDark ? theme.border : '#E5E7EB'),
+                  borderRadius: 14,
+                  paddingHorizontal: 15,
+                  fontSize: 16,
+                  fontWeight: '600',
+                  color: theme.text1,
+                  backgroundColor: theme.isDark ? theme.bg : '#F9FAFB',
+                  textAlign: 'center',
+                  marginBottom: 16
+                }}
+                placeholder="Farklı bir tutar girin (₺)"
+                placeholderTextColor={theme.text4}
+                keyboardType="numeric"
+                value={[50,100,200,500].map(String).includes(topUpAmount) ? '' : topUpAmount}
+                onChangeText={(text) => setTopUpAmount(text)}
+              />
+
+              {/* Amount preview */}
+              {topUpAmount && parseFloat(topUpAmount) > 0 && (
+                <View style={{ 
+                  backgroundColor: theme.isDark ? theme.bg : '#ECFDF5', 
+                  borderRadius: 12, 
+                  padding: 12, 
+                  marginBottom: 16, 
+                  width: '100%',
+                  alignItems: 'center'
+                }}>
+                  <Text style={{ fontSize: 12, color: theme.text3 }}>Yüklenecek tutar</Text>
+                  <Text style={{ fontSize: 24, fontWeight: '800', color: theme.accent, marginTop: 2 }}>₺{topUpAmount}</Text>
+                </View>
+              )}
+              
+              <TouchableOpacity 
+                style={{
+                  backgroundColor: topUpAmount && parseFloat(topUpAmount) > 0 ? theme.accent : (theme.isDark ? theme.bg : '#E5E7EB'),
+                  width: '100%',
+                  height: 54,
+                  borderRadius: 16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  gap: 8,
+                }}
+                onPress={handleTopUp}
+                disabled={loadingTopUp || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                activeOpacity={0.8}
+              >
+                {loadingTopUp ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={{ 
+                    color: topUpAmount && parseFloat(topUpAmount) > 0 ? 'white' : theme.text4, 
+                    fontSize: 16, 
+                    fontWeight: '700' 
+                  }}>
+                    {topUpAmount && parseFloat(topUpAmount) > 0 
+                      ? `₺${topUpAmount} Yükle` 
+                      : 'Tutar Seçin'}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>

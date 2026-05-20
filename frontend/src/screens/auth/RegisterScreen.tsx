@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   View,
   ScrollView,
   Text,
   TouchableOpacity,
-  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
-import { setTreeProgress } from '../../redux/slices/authSlice';
-import { registerStyles } from '../../styles';
-import { RootState } from '../../redux/store';
-import TreeProgress from '../../components/common/TreeProgress';
-import ModeToggle from '../../components/common/ModeToggle';
 import FloatingLabelInput from '../../components/form/FloatingLabelInput';
 import PasswordInput from '../../components/form/PasswordInput';
 
+const { width } = Dimensions.get('window');
+
 export default function RegisterScreen({ navigation }: any) {
   const { theme } = useTheme();
-  const dispatch = useDispatch();
   const { register } = useAuth();
-  const treeProgress = useSelector((state: RootState) => state.auth.treeProgress);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -30,10 +30,33 @@ export default function RegisterScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const updateTree = () => {
-    const filled = [firstName, lastName, email, password.length >= 8].filter(Boolean).length;
-    dispatch(setTreeProgress((filled / 4) * 100));
-  };
+  // Animations
+  const logoScale = useRef(new Animated.Value(0)).current;
+  const cardSlide = useRef(new Animated.Value(80)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.timing(cardSlide, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -58,128 +81,280 @@ export default function RegisterScreen({ navigation }: any) {
     setLoading(true);
     const success = await register(firstName, lastName, email, password);
     setLoading(false);
-    if (success) {
-      // navigation.replace('App'); // Redux state change handles this
-    }
   };
 
+  const bgColor = theme.isDark ? '#0F172A' : '#059669';
+
   return (
-    <View style={[registerStyles.container, { backgroundColor: theme.bg }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={registerStyles.scrollContent}>
-        <View style={registerStyles.heroSection}>
-          <View style={[registerStyles.heroBadge, { backgroundColor: theme.accentLight }]}>
-            <Text style={[registerStyles.heroBadgeText, { color: theme.accentDark }]}>
-              🌍 İyilik topluluğuna katıl
-            </Text>
-          </View>
-          <Text style={[registerStyles.heroTitle, { color: theme.text1 }]}>
-            Küçük bir alışveriş,{' '}
-            <Text style={[registerStyles.heroTitleAccent, { color: theme.accent }]}>büyük bir değişim.</Text>
-          </Text>
-          <Text style={[registerStyles.heroSub, { color: theme.text3 }]}>
-            Heyva'da her ürün hem sana hem de ihtiyaç sahiplerine ulaşabilir.
-          </Text>
+    <View style={[styles.container, { backgroundColor: bgColor }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-          <TreeProgress progress={treeProgress} />
-        </View>
+      {/* Background decoration */}
+      <View style={styles.bgPattern}>
+        <View style={[styles.decoCircle, { top: -60, left: -60, width: 220, height: 220, backgroundColor: 'rgba(255,255,255,0.06)' }]} />
+        <View style={[styles.decoCircle, { top: 80, right: -50, width: 160, height: 160, backgroundColor: 'rgba(255,255,255,0.05)' }]} />
+        <View style={[styles.decoCircle, { bottom: 60, left: -20, width: 110, height: 110, backgroundColor: 'rgba(255,255,255,0.04)' }]} />
+      </View>
 
-        <ModeToggle />
-
-        <View style={registerStyles.formContainer}>
-          <View style={{ flexDirection: 'row', gap: 20 }}>
-            <View style={{ flex: 1 }}>
-              <FloatingLabelInput
-                label="Ad"
-                icon="👤"
-                value={firstName}
-                onChangeText={(text) => {
-                  setFirstName(text);
-                  clearFieldError('firstName');
-                  updateTree();
-                }}
-                error={errors.firstName}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo & Brand */}
+          <Animated.View style={[styles.brandSection, { transform: [{ scale: logoScale }] }]}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/app_logo.png')}
+                style={styles.logo}
               />
             </View>
-            <View style={{ flex: 1 }}>
-              <FloatingLabelInput
-                label="Soyad"
-                icon="👤"
-                value={lastName}
-                onChangeText={(text) => {
-                  setLastName(text);
-                  clearFieldError('lastName');
-                  updateTree();
-                }}
-                error={errors.lastName}
-              />
+            <Text style={styles.brandName}>İyilik Sepeti</Text>
+            <Text style={styles.brandTagline}>Aramıza hoş geldiniz!</Text>
+          </Animated.View>
+
+          {/* Form Card */}
+          <Animated.View
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.surface,
+                transform: [{ translateY: cardSlide }],
+                opacity: cardOpacity,
+              },
+            ]}
+          >
+            <Text style={[styles.cardTitle, { color: theme.text1 }]}>Hesap Oluştur ✨</Text>
+
+            <View style={styles.nameRow}>
+              <View style={{ flex: 1 }}>
+                <FloatingLabelInput
+                  label="Ad"
+                  icon="👤"
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    clearFieldError('firstName');
+                  }}
+                  error={errors.firstName}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <FloatingLabelInput
+                  label="Soyad"
+                  icon="👤"
+                  value={lastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    clearFieldError('lastName');
+                  }}
+                  error={errors.lastName}
+                />
+              </View>
             </View>
-          </View>
 
-          <FloatingLabelInput
-            label="E-posta"
-            icon="✉️"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              clearFieldError('email');
-              updateTree();
-            }}
-            error={errors.email}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+            <FloatingLabelInput
+              label="E-posta"
+              icon="✉️"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                clearFieldError('email');
+              }}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-          <PasswordInput
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              clearFieldError('password');
-              updateTree();
-            }}
-            error={errors.password}
-            onEndEditing={updateTree}
-          />
+            <PasswordInput
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                clearFieldError('password');
+              }}
+              error={errors.password}
+            />
 
-          <View style={registerStyles.ctaWrapper}>
             <TouchableOpacity
-              style={[registerStyles.ctaButton, { backgroundColor: theme.accent }]}
+              style={[styles.primaryButton, { backgroundColor: theme.accent }]}
               onPress={handleRegister}
               disabled={loading}
+              activeOpacity={0.85}
             >
-              <View style={registerStyles.ctaButtonInner}>
-                <Text style={registerStyles.ctaButtonText}>
-                  {loading ? 'Kaydediliyor...' : 'Topluluğa Katıl'}
-                </Text>
-                <Text style={registerStyles.ctaButtonText}>🌿</Text>
-              </View>
+              <Text style={styles.primaryButtonText}>
+                {loading ? 'Kaydediliyor...' : 'Kayıt Ol →'}
+              </Text>
             </TouchableOpacity>
-          </View>
 
-          <View style={registerStyles.divider}>
-            <View style={[registerStyles.dividerLine, { backgroundColor: theme.border }]} />
-            <Text style={[registerStyles.dividerText, { color: theme.text4 }]}>veya sosyal hesapla</Text>
-            <View style={[registerStyles.dividerLine, { backgroundColor: theme.border }]} />
-          </View>
+            <View style={styles.dividerRow}>
+              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+              <Text style={[styles.dividerText, { color: theme.text4 }]}>veya</Text>
+              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+            </View>
 
-          <View style={registerStyles.socialRow}>
-            <TouchableOpacity style={[registerStyles.socialButton, { borderColor: theme.border, backgroundColor: theme.surface }]}>
-              <Text style={registerStyles.socialIcon}>G</Text>
-              <Text style={[registerStyles.socialText, { color: theme.text2 }]}>Google</Text>
+            <TouchableOpacity
+              style={[styles.secondaryButton, { borderColor: theme.accent }]}
+              onPress={() => navigation.navigate('Login')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>
+                Zaten Hesabım Var
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[registerStyles.socialButton, { borderColor: theme.border, backgroundColor: theme.surface }]}>
-              <Text style={registerStyles.socialIcon}>🍎</Text>
-              <Text style={[registerStyles.socialText, { color: theme.text2 }]}>Apple</Text>
-            </TouchableOpacity>
-          </View>
+          </Animated.View>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={[registerStyles.signinLink, { color: theme.text3 }]}>
-              Zaten hesabın var mı?{' '}
-              <Text style={[registerStyles.signinLinkText, { color: theme.accent }]}>Giriş Yap</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          {/* Feature highlights */}
+          <View style={styles.featuresRow}>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🛒</Text>
+              <Text style={styles.featureText}>Alışveriş</Text>
+            </View>
+            <View style={[styles.featureDot, { backgroundColor: 'rgba(255,255,255,0.3)' }]} />
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>💚</Text>
+              <Text style={styles.featureText}>Bağış</Text>
+            </View>
+            <View style={[styles.featureDot, { backgroundColor: 'rgba(255,255,255,0.3)' }]} />
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📦</Text>
+              <Text style={styles.featureText}>Kargo Takibi</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  bgPattern: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  decoCircle: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 50,
+    paddingBottom: 30,
+  },
+  brandSection: {
+    alignItems: 'center',
+    marginBottom: 22,
+  },
+  logoContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  logo: {
+    width: 70,
+    height: 70,
+    resizeMode: 'contain',
+  },
+  brandName: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  brandTagline: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+  },
+  card: {
+    borderRadius: 28,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+  },
+  cardTitle: {
+    fontSize: 19,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  primaryButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 14,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  secondaryButton: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+  secondaryButtonText: {
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    gap: 12,
+  },
+  featureItem: {
+    alignItems: 'center',
+    gap: 3,
+  },
+  featureIcon: {
+    fontSize: 18,
+  },
+  featureText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  featureDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+});

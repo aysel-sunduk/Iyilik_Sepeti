@@ -59,6 +59,10 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.justLoggedIn = true;
     },
+    updateUser: (state, action: PayloadAction<User>) => {
+      state.loading = false;
+      state.user = action.payload;
+    },
     resetLoggedIn: (state) => {
       state.justLoggedIn = false;
     },
@@ -80,6 +84,7 @@ export const {
   registerFailure,
   loginStart,
   loginSuccess,
+  updateUser,
   loginFailure,
   logout,
   resetLoggedIn,

@@ -46,7 +46,7 @@ export default function HomeScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const { logout, user } = useAuth();
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const userFirstName = user?.firstName ?? 'Kahraman';
+  const userFirstName = user?.firstName ?? 'Kullanıcı';
   const iyilikBalance = user?.iyilikBalance ?? 0;
   const walletBalance = user?.walletBalance ?? 0;
 
@@ -288,7 +288,7 @@ export default function HomeScreen({ navigation }: any) {
                 {user ? (
                   <View style={styles.welcomeContentRow}>
                     <View style={styles.welcomeTextSection}>
-                      <Text style={styles.welcomeGreetingText}>İyi ki varsın, ✨</Text>
+                      <Text style={styles.welcomeGreetingText}>Merhaba, ✨</Text>
                       <Text style={styles.welcomeNameText} numberOfLines={1}>
                         {userFirstName}!
                       </Text>
@@ -321,9 +321,9 @@ export default function HomeScreen({ navigation }: any) {
                   <View style={styles.welcomeContentRow}>
                     <View style={styles.welcomeTextSection}>
                       <Text style={styles.welcomeGreetingText}>Hoş Geldiniz, ✨</Text>
-                      <Text style={styles.welcomeNameText}>İyilik Kahramanı</Text>
+                      <Text style={styles.welcomeNameText}>Değerli Ziyaretçi</Text>
                       <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>
-                        Giriş yaparak iyilik yapmaya başla.
+                        Giriş yapın ve alışverişe başlayın.
                       </Text>
                     </View>
                     <TouchableOpacity 
@@ -444,7 +444,7 @@ export default function HomeScreen({ navigation }: any) {
               <View style={[styles.quickIcon, { backgroundColor: '#F59E0B15' }]}><Text style={{ fontSize: 24 }}>⭐</Text></View>
               <Text style={[styles.quickText, { color: theme.text2 }]}>Popüler</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('AllProducts', { categoryName: 'Yakınımda' })}>
+            <TouchableOpacity style={styles.quickItem} onPress={() => navigation.navigate('NearMe')}>
               <View style={[styles.quickIcon, { backgroundColor: '#EC489915' }]}><Text style={{ fontSize: 24 }}>📍</Text></View>
               <Text style={[styles.quickText, { color: theme.text2 }]}>Yakınımda</Text>
             </TouchableOpacity>
@@ -657,9 +657,9 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             </View>
             <View style={styles.loginSuccessBody}>
-              <Text style={[styles.loginSuccessTitle, { color: theme.text1 }]}>Tekrar Hoş Geldin!</Text>
+              <Text style={[styles.loginSuccessTitle, { color: theme.text1 }]}>Tekrar Hoş Geldiniz!</Text>
               <Text style={[styles.loginSuccessMessage, { color: theme.text3 }]}>
-                {user?.firstName || 'Kahraman'}, seninle birlikte iyilik yapmaya devam etmek harika. ✨
+                {user?.firstName || 'Kullanıcı'}, keyifli alışverişler ve iyilik dolu bir gün dileriz! ✨
               </Text>
               <TouchableOpacity 
                 style={[styles.loginSuccessButton, { backgroundColor: theme.accent }]}
@@ -682,7 +682,7 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             </View>
             <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 20 }]}>Başarıyla Çıkış Yapıldı</Text>
-            <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, kahraman! ✨</Text>
+            <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, keyifli alışverişler! ✨</Text>
           </View>
         </View>
       </Modal>
