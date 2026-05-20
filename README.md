@@ -156,18 +156,3 @@ http://localhost:8080/swagger-ui.html
 | GET | `/api/orders/my` | Kullanıcının siparişleri |
 | GET | `/api/campaigns` | Bağış kampanyaları |
 | GET | `/api/donation-hubs` | Yakındaki bağış noktaları |
-
----
-
-## 👥 Test Kullanıcıları
-
-| Rol | E-posta | Şifre |
-|-----|---------|-------|
-| Admin | `admin@gmail.com` | `admin123` |
-| Kullanıcı | `user@gmail.com` | `user1234` |
-
----
-
-## 📄 Lisans
-
-Bu proje BTK Akademi staj programı kapsamında geliştirilmiştir.
