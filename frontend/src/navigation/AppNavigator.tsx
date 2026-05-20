@@ -24,6 +24,7 @@ import OrdersScreen from '../screens/main/OrdersScreen';
 import AddressesScreen from '../screens/main/AddressesScreen';
 import CardsScreen from '../screens/main/CardsScreen';
 import AllProductsScreen from '../screens/main/AllProductsScreen';
+import NearMeScreen from '../screens/main/NearMeScreen';
 import AdminNavigator from './AdminNavigator';
 import StaffNavigator from './StaffNavigator';
 
@@ -113,6 +114,7 @@ function MainStack() {
       <Stack.Screen name="AllProducts" component={AllProductsScreen} />
       <Stack.Screen name="OrderDetail" component={OrderTrackingScreen} />
       <Stack.Screen name="Admin" component={AdminNavigator} />
+      <Stack.Screen name="NearMe" component={NearMeScreen} />
     </Stack.Navigator>
   );
 }

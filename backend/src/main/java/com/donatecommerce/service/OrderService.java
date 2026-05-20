@@ -271,6 +271,47 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(this::mapToOrderResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public OrderResponse shipOrder(UUID orderId, String shippingCompany, String trackingNumber) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sipariş bulunamadı"));
+        
+        if (order.getStatus() != OrderStatus.PROCESSING) {
+            throw new BadRequestException("Sipariş hazırlanıyor (PROCESSING) durumunda olmalıdır");
+        }
+        
+        order.setStatus(OrderStatus.SHIPPED);
+        order.setShippedAt(LocalDateTime.now());
+        order.setShippingCompany(shippingCompany != null && !shippingCompany.isBlank() ? shippingCompany : "İyilik Kargo");
+        order.setTrackingNumber(trackingNumber != null && !trackingNumber.isBlank() ? trackingNumber : "TRK" + System.currentTimeMillis());
+        
+        orderRepository.save(order);
+        return mapToOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse deliverOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sipariş bulunamadı"));
+        
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            throw new BadRequestException("Sipariş kargolanmış (SHIPPED) durumunda olmalıdır");
+        }
+        
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setDeliveredAt(LocalDateTime.now());
+        
+        orderRepository.save(order);
+        return mapToOrderResponse(order);
+    }
+
+
     private OrderResponse mapToOrderResponse(Order order) {
         OrderResponse response = new OrderResponse();
         response.setId(order.getId());

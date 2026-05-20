@@ -1,12 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { ApiError, ApiResponse, RefreshTokenResponse } from './types';
+import { Alert } from 'react-native';
+import { store } from '../../redux/store';
+import { logout as logoutAction } from '../../redux/slices/authSlice';
 
 class ApiClient {
   private client: AxiosInstance;
   private baseURL: string;
   private isRefreshing: boolean = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
+  private isAlertShown: boolean = false;
 
   constructor() {
     this.baseURL = __DEV__
@@ -44,9 +48,14 @@ class ApiClient {
       async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
           originalRequest._retry = true;
           return this.handleRefreshToken(originalRequest);
+        }
+
+        if (error.response?.status === 401) {
+          await this.logout();
+          this.triggerSessionExpired();
         }
 
         return Promise.reject(this.normalizeError(error));
@@ -54,11 +63,30 @@ class ApiClient {
     );
   }
 
+  private triggerSessionExpired(): void {
+    if (this.isAlertShown) return;
+    this.isAlertShown = true;
+    Alert.alert(
+      'Oturum Süresi Doldu',
+      'Oturum süreniz doldu, lütfen tekrar giriş yapın.',
+      [
+        { 
+          text: 'Tamam', 
+          onPress: () => {
+            this.isAlertShown = false;
+          } 
+        }
+      ]
+    );
+    store.dispatch(logoutAction());
+  }
+
   private async handleRefreshToken(originalRequest: AxiosRequestConfig): Promise<any> {
     try {
       const refreshToken = await this.getRefreshToken();
       if (!refreshToken) {
         await this.logout();
+        this.triggerSessionExpired();
         return Promise.reject(new Error('No refresh token available'));
       }
 
@@ -87,6 +115,7 @@ class ApiClient {
     } catch (error) {
       this.isRefreshing = false;
       await this.logout();
+      this.triggerSessionExpired();
       return Promise.reject(error);
     }
   }

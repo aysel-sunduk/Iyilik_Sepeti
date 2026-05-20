@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.donatecommerce.dto.request.CancelOrderRequest;
 import com.donatecommerce.dto.request.CreateOrderRequest;
@@ -58,6 +59,17 @@ public class OrderController {
         List<OrderResponse> orders = orderService.getMyOrders(userDetails.getUsername(), status);
         return ResponseEntity.ok(orders);
     }
+
+    /**
+     * Tüm siparişleri listele (Admin/Staff yetkili)
+     * GET /api/orders/all
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<List<OrderResponse>> getAllOrders() {
+        List<OrderResponse> orders = orderService.getAllOrders();
+        return ResponseEntity.ok(orders);
+    }
     
     /**
      * Sipariş detayı
@@ -86,6 +98,31 @@ public class OrderController {
                 orderId, 
                 request != null ? request : new CancelOrderRequest(), 
                 userDetails.getUsername());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Siparişi kargoya ver (Admin/Staff yetkili)
+     * POST /api/orders/{orderId}/ship
+     */
+    @PostMapping("/{orderId}/ship")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<OrderResponse> shipOrder(
+            @PathVariable UUID orderId,
+            @RequestParam(required = false) String shippingCompany,
+            @RequestParam(required = false) String trackingNumber) {
+        OrderResponse response = orderService.shipOrder(orderId, shippingCompany, trackingNumber);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Siparişi teslim et (Admin/Staff yetkili)
+     * POST /api/orders/{orderId}/deliver
+     */
+    @PostMapping("/{orderId}/deliver")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<OrderResponse> deliverOrder(@PathVariable UUID orderId) {
+        OrderResponse response = orderService.deliverOrder(orderId);
         return ResponseEntity.ok(response);
     }
 }

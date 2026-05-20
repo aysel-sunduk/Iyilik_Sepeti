@@ -39,6 +39,21 @@ public class UserService {
         return mapToUserResponse(user);
     }
     
+    @Transactional
+    public UserResponse topUpWallet(String email, java.math.BigDecimal amount) {
+        if (amount == null || amount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new com.donatecommerce.exception.BadRequestException("Yüklenecek tutar sıfırdan büyük olmalıdır");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+        
+        java.math.BigDecimal currentBalance = user.getWalletBalance() != null ? user.getWalletBalance() : java.math.BigDecimal.ZERO;
+        user.setWalletBalance(currentBalance.add(amount));
+        
+        user = userRepository.save(user);
+        return mapToUserResponse(user);
+    }
+    
     private UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
@@ -47,6 +62,7 @@ public class UserService {
         response.setLastName(user.getLastName());
         response.setPhone(user.getPhone());
         response.setAvatarUrl(user.getAvatarUrl());
+        response.setRole(user.getRole() != null ? user.getRole().getName() : "USER");
         
         // Null güvenliği: Eğer veritabanında null ise 0 olarak dön
         response.setWalletBalance(user.getWalletBalance() != null ? user.getWalletBalance() : java.math.BigDecimal.ZERO);

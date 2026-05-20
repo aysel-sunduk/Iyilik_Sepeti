@@ -30,7 +30,7 @@ const CampaignEditScreen = () => {
     imageUrl: editingCampaign?.imageUrl || '',
     targetAmount: editingCampaign?.targetAmount?.toString() || '',
     unit: editingCampaign?.unit || 'TL',
-    isActive: editingCampaign?.isActive ?? true,
+    isActive: editingCampaign?.isActive ?? (editingCampaign as any)?.active ?? true,
   });
 
   const [isSaving, setIsSaving] = useState(false);

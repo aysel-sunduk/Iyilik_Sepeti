@@ -26,6 +26,8 @@ import com.donatecommerce.repository.AddressRepository;
 import com.donatecommerce.repository.DonationRepository;
 import com.donatecommerce.repository.PaymentRepository;
 import com.donatecommerce.repository.UserRepository;
+import com.donatecommerce.entity.DonationHub;
+import com.donatecommerce.repository.DonationHubRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -39,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
     private final DonationRepository donationRepository;
     private final PaymentRepository paymentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DonationHubRepository donationHubRepository;
 
     public DataInitializer(ProductRepository productRepository, 
                            CategoryRepository categoryRepository, 
@@ -48,7 +51,8 @@ public class DataInitializer implements CommandLineRunner {
                            AddressRepository addressRepository,
                            DonationRepository donationRepository,
                            PaymentRepository paymentRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           DonationHubRepository donationHubRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.campaignRepository = campaignRepository;
@@ -58,6 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         this.donationRepository = donationRepository;
         this.paymentRepository = paymentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.donationHubRepository = donationHubRepository;
     }
 
     @Override
@@ -73,6 +78,9 @@ public class DataInitializer implements CommandLineRunner {
         }
         if (productRepository.count() == 0) {
             seedProducts();
+        }
+        if (donationHubRepository.count() == 0) {
+            seedDonationHubs();
         }
     }
 
@@ -357,5 +365,57 @@ public class DataInitializer implements CommandLineRunner {
         p2.setLongitude(28.9750);
 
         productRepository.saveAll(List.of(p1, p2));
+    }
+
+    private void seedDonationHubs() {
+        donationHubRepository.save(DonationHub.builder()
+                .name("Kadıköy İyilik Toplama Merkezi")
+                .description("Kıyafet, kitap ve dayanıklı gıda yardımlarınızı kabul ediyoruz. Gönüllü olarak paketleme çalışmalarına katılabilirsiniz.")
+                .type("HUB")
+                .latitude(40.9900)
+                .longitude(29.0250)
+                .address("Caferağa Mah. Moda Cad. No: 45, Kadıköy, İstanbul")
+                .imageUrl("https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=1170&auto=format&fit=crop")
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .build());
+
+        donationHubRepository.save(DonationHub.builder()
+                .name("Beşiktaş Sokak Hayvanları Besleme Etkinliği")
+                .description("Sokak dostlarımız için mama dağıtımı ve kulübe yapımı faaliyeti. Barınak desteği için gönüllüler aranıyor.")
+                .type("EVENT")
+                .latitude(41.0420)
+                .longitude(29.0080)
+                .address("Abbasağa Parkı İçi, Beşiktaş, İstanbul")
+                .imageUrl("https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=1169&auto=format&fit=crop")
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .build());
+
+        donationHubRepository.save(DonationHub.builder()
+                .name("Ataşehir Sokak Hayvanları Geçici Barınağı")
+                .description("Sokaktan kurtarılan dostlarımızın bakım, tedavi ve sahiplendirme merkezi.")
+                .type("SHELTER")
+                .latitude(40.9850)
+                .longitude(29.1100)
+                .address("Barbaros Mah. Mor Sümbül Sok. No: 12, Ataşehir, İstanbul")
+                .imageUrl("https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=1169&auto=format&fit=crop")
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .build());
+
+        donationHubRepository.save(DonationHub.builder()
+                .name("Şişli Çocuk Destek Deposu")
+                .description("Çocuklar için kırtasiye, oyuncak ve giysi yardımlarının ayrıştırılarak köy okullarına gönderildiği merkez.")
+                .type("HUB")
+                .latitude(41.0600)
+                .longitude(28.9870)
+                .address("Halaskargazi Cad. No: 110, Şişli, İstanbul")
+                .imageUrl("https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=1170&auto=format&fit=crop")
+                .isActive(true)
+                .createdAt(LocalDateTime.now())
+                .build());
+
+        System.out.println("DEBUG: 4 adet mock DonationHub başarıyla oluşturuldu!");
     }
 }

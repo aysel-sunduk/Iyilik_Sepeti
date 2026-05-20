@@ -4,11 +4,13 @@ import { useTheme } from '../../context/ThemeContext';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { clearCart } from '../../redux/slices/cartSlice';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api/api';
 
 export default function CheckoutScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useDispatch();
+  const { refreshUser } = useAuth();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const totalAmount = useSelector((state: RootState) => state.cart.totalAmount);
 
@@ -123,8 +125,14 @@ export default function CheckoutScreen({ navigation }: any) {
 
       // 4. API Çağrısı
       await api.orders.create(orderData);
+      
+      try {
+        await refreshUser();
+      } catch (err) {
+        console.warn('Failed to refresh user stats after order:', err);
+      }
 
-      Alert.alert('İşlem Başarılı! 🎉', isGift ? 'Hediye bağışın başarıyla iletildi. İyilik paylaştıkça çoğalır! ✨' : 'Siparişin başarıyla alındı. Teşekkürler kahraman! 🌟');
+      Alert.alert('İşlem Başarılı! 🎉', isGift ? 'Hediye bağışınız başarıyla iletildi. İyilik paylaştıkça çoğalır! ✨' : 'Siparişiniz başarıyla alındı. Keyifli günler dileriz! 🌟');
       dispatch(clearCart());
       navigation.navigate('MainTabs');
 

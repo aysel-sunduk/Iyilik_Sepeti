@@ -132,6 +132,15 @@ export const orderApi = {
     
   getById: (id: string) => 
     apiClient.get<any>(`/api/orders/${id}`),
+
+  getAll: () =>
+    apiClient.get<any[]>('/api/orders/all'),
+
+  ship: (id: string, shippingCompany?: string, trackingNumber?: string) =>
+    apiClient.post(`/api/orders/${id}/ship`, null, { params: { shippingCompany, trackingNumber } }),
+
+  deliver: (id: string) =>
+    apiClient.post(`/api/orders/${id}/deliver`),
 };
 
 // User Endpoints
@@ -165,6 +174,9 @@ export const userApi = {
     
   deleteCard: (id: string) => 
     apiClient.delete(`/api/users/me/cards/${id}`),
+
+  topUpWallet: (amount: number) =>
+    apiClient.post<UserResponse>('/api/users/wallet/topup', null, { params: { amount } }),
 };
 
 // Cart Endpoints
@@ -209,6 +221,12 @@ export const donationApi = {
     apiClient.patch<any>(`/api/donations/${donationId}/status`, { status }),
 };
 
+// Donation Hub Endpoints
+export const hubsApi = {
+  getNear: (lat: number, lng: number, radiusKm: number = 10.0) =>
+    apiClient.get<any[]>('/api/hubs/near', { params: { lat, lng, radiusKm } }),
+};
+
 // Default export containing all APIs
 const api = {
   auth: authApi,
@@ -220,6 +238,7 @@ const api = {
   cart: cartApi,
   favorites: favoriteApi,
   donations: donationApi,
+  hubs: hubsApi,
 };
 
 export default api;

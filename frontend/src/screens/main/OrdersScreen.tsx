@@ -123,7 +123,7 @@ export default function OrdersScreen({ navigation }: any) {
           <Text style={[styles.emptyText, { color: theme.text3 }]}>Sepetini iyilikle doldurmaya ne dersin?</Text>
           <TouchableOpacity 
             style={[styles.shopBtn, { backgroundColor: theme.accent }]}
-            onPress={() => navigation.navigate('MainTabs')}
+            onPress={() => navigation.navigate('Ana Sayfa')}
           >
             <Text style={styles.shopBtnText}>Alışverişe Başla</Text>
           </TouchableOpacity>

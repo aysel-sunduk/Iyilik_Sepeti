@@ -7,6 +7,7 @@ import CampaignManagementScreen from '../screens/admin/CampaignManagementScreen'
 import CampaignEditScreen from '../screens/admin/CampaignEditScreen';
 import DonationVerifyScreen from '../screens/admin/DonationVerifyScreen';
 import CategoryManagementScreen from '../screens/admin/CategoryManagementScreen';
+import OrderManagementScreen from '../screens/admin/OrderManagementScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export default function AdminNavigator() {
       <Stack.Screen name="CampaignEdit" component={CampaignEditScreen} />
       <Stack.Screen name="DonationVerify" component={DonationVerifyScreen} />
       <Stack.Screen name="CategoryManagement" component={CategoryManagementScreen} />
+      <Stack.Screen name="OrderManagement" component={OrderManagementScreen} />
     </Stack.Navigator>
   );
 }

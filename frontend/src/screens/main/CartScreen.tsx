@@ -77,7 +77,7 @@ export default function CartScreen({ navigation }: any) {
       <View style={[styles.emptyContainer, { backgroundColor: theme.bg }]}>
         <Text style={{ fontSize: 80, marginBottom: 20 }}>🛒</Text>
         <Text style={[styles.emptyText, { color: theme.text2, fontWeight: 'bold', fontSize: 20 }]}>Sepetiniz boş</Text>
-        <TouchableOpacity style={[styles.shopBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('MainTabs')}>
+        <TouchableOpacity style={[styles.shopBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Ana Sayfa')}>
           <Text style={styles.shopBtnText}>Alışverişe Başla</Text>
         </TouchableOpacity>
       </View>

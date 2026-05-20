@@ -4,9 +4,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.donatecommerce.dto.response.UserResponse;
@@ -36,5 +38,13 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody UserResponse request) {
         return ResponseEntity.ok(userService.updateProfile(userDetails.getUsername(), request));
+    }
+    
+    @PostMapping("/wallet/topup")
+    @Operation(summary = "Cüzdana bakiye yükle")
+    public ResponseEntity<UserResponse> topUpWallet(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam java.math.BigDecimal amount) {
+        return ResponseEntity.ok(userService.topUpWallet(userDetails.getUsername(), amount));
     }
 }

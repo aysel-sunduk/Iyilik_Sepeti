@@ -26,7 +26,7 @@ const AdminDashboardScreen = () => {
       ]);
       setStats({
         products: products.length,
-        campaigns: campaigns.filter(c => c.isActive).length
+        campaigns: campaigns.filter(c => c.isActive || (c as any).active).length
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
@@ -63,6 +63,13 @@ const AdminDashboardScreen = () => {
       icon: '📂',
       screen: 'CategoryManagement',
       color: '#7C3AED',
+    },
+    {
+      title: 'Sipariş Yönetimi',
+      description: 'Sipariş durumunu kargola/teslim et',
+      icon: '🚚',
+      screen: 'OrderManagement',
+      color: '#0284C7',
     },
   ];
 
