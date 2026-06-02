@@ -71,6 +71,8 @@ public class AddressService {
                 .district(request.getDistrict())
                 .addressLine(request.getAddressLine())
                 .postalCode(request.getPostalCode())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
                 .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
                 .isDeleted(false)
                 .build();
@@ -97,6 +99,8 @@ public class AddressService {
         address.setDistrict(request.getDistrict());
         address.setAddressLine(request.getAddressLine());
         address.setPostalCode(request.getPostalCode());
+        if (request.getLatitude() != null) address.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null) address.setLongitude(request.getLongitude());
         
         if (request.getIsDefault() != null) {
             address.setIsDefault(request.getIsDefault());
@@ -151,6 +155,8 @@ public class AddressService {
         response.setDistrict(address.getDistrict());
         response.setAddressLine(address.getAddressLine());
         response.setPostalCode(address.getPostalCode());
+        response.setLatitude(address.getLatitude());
+        response.setLongitude(address.getLongitude());
         response.setIsDefault(address.getIsDefault());
         response.setCreatedAt(address.getCreatedAt());
         response.setUpdatedAt(address.getUpdatedAt());

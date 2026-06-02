@@ -44,6 +44,12 @@ public class Donation {
     private String proofImageUrl;
     private String beneficiary;
 
+    @Column(columnDefinition = "TEXT")
+    private String addressText;
+
+    private Double latitude;
+    private Double longitude;
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime deliveredAt;

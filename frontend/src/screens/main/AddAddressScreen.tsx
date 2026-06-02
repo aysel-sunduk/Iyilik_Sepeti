@@ -14,6 +14,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api/api';
 import SuccessModal from '../../components/common/SuccessModal';
+import MapPicker from '../../components/common/MapPicker';
 
 export default function AddAddressScreen({ navigation, route }: any) {
   const { theme } = useTheme();
@@ -29,6 +30,8 @@ export default function AddAddressScreen({ navigation, route }: any) {
   const [district, setDistrict] = useState(editAddress?.district || '');
   const [neighborhood, setNeighborhood] = useState(editAddress?.neighborhood || '');
   const [fullAddress, setFullAddress] = useState(editAddress?.addressLine || '');
+  const [latitude, setLatitude] = useState<number | undefined>(editAddress?.latitude);
+  const [longitude, setLongitude] = useState<number | undefined>(editAddress?.longitude);
 
   const validatePhone = (num: string) => {
     const phoneRegex = /^05\d{9}$/;
@@ -66,6 +69,8 @@ export default function AddAddressScreen({ navigation, route }: any) {
         district,
         neighborhood,
         addressLine: `${neighborhood} ${fullAddress}`, // Backend'in beklediği format
+        latitude,
+        longitude,
         isDefault: true
       };
 
@@ -98,6 +103,17 @@ export default function AddAddressScreen({ navigation, route }: any) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.form}>
           
+          <Text style={[styles.inputLabel, { color: theme.text2 }]}>Haritada Konum İşaretle (Opsiyonel)</Text>
+          <MapPicker 
+            initialLatitude={latitude}
+            initialLongitude={longitude}
+            onLocationSelect={(lat, lng) => {
+              setLatitude(lat);
+              setLongitude(lng);
+            }} 
+            height={250}
+          />
+
           <Text style={[styles.inputLabel, { color: theme.text2 }]}>Adres Başlığı * (Örn: Evim, Ofis)</Text>
           <TextInput
             style={[styles.input, { borderColor: theme.border, color: theme.text1, backgroundColor: theme.surface }]}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image, Alert, Platform } from 'react-native';
 import Svg, { Circle, Path, G, Rect } from 'react-native-svg';
+import LiveTrackingMap from '../../components/common/LiveTrackingMap';
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api/api';
 
@@ -178,61 +179,14 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
           <View style={[styles.card, { backgroundColor: theme.surface }]}>
             <Text style={[styles.trackingCardTitle, { color: theme.text1 }]}>📍 Canlı Kargo Takibi</Text>
             
-            {/* The SVG Route Map */}
+            {/* The Live Tracking Map */}
             <View style={[styles.svgMapWrapper, { backgroundColor: theme.bg }]}>
-              <Svg viewBox="0 0 300 180" width="100%" height={160}>
-                {/* Draw Route Path connecting coordinates */}
-                <Path
-                  d="M 30 130 C 60 70, 80 70, 90 70 C 100 70, 140 120, 160 120 C 180 120, 200 60, 220 60 C 240 60, 250 110, 270 110"
-                  fill="none"
-                  stroke="#E5E7EB"
-                  strokeWidth={4}
-                  strokeLinecap="round"
-                />
-                
-                {/* Draw active portion of path in Accent Color */}
-                <Path
-                  d="M 30 130 C 60 70, 80 70, 90 70 C 100 70, 140 120, 160 120 C 180 120, 200 60, 220 60 C 240 60, 250 110, 270 110"
-                  fill="none"
-                  stroke={theme.accent}
-                  strokeWidth={4}
-                  strokeLinecap="round"
-                  strokeDasharray="300"
-                  strokeDashoffset={300 - (300 * progress)}
-                />
-
-                {/* Route Markers (Points) */}
-                {ROUTE_POINTS.map((pt, idx) => {
-                  const isCurrent = progress * (ROUTE_POINTS.length - 1) >= idx;
-                  return (
-                    <G key={idx}>
-                      <Circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={6}
-                        fill={isCurrent ? theme.accent : '#D1D5DB'}
-                      />
-                      <Circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={3}
-                        fill="white"
-                      />
-                    </G>
-                  );
-                })}
-
-                {/* Moving Courier Icon */}
-                <G transform={`translate(${courierPos.x - 12}, ${courierPos.y - 12})`}>
-                  {/* Glowing background ring */}
-                  <Circle cx={12} cy={12} r={14} fill={theme.accent} opacity={0.2} />
-                  <Circle cx={12} cy={12} r={10} fill={theme.accent} />
-                  {/* Delivery truck/motorcycle icon representation */}
-                  <Rect x={7} y={8} width={10} height={8} rx={1} fill="white" />
-                  <Circle cx={9} cy={16} r={2} fill="white" />
-                  <Circle cx={15} cy={16} r={2} fill="white" />
-                </G>
-              </Svg>
+              <LiveTrackingMap 
+                progress={progress} 
+                destinationLat={order.latitude || undefined}
+                destinationLng={order.longitude || undefined}
+                height={200}
+              />
             </View>
 
             {/* Tracking Status Display */}

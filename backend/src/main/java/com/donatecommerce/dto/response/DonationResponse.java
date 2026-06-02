@@ -27,6 +27,9 @@ public class DonationResponse {
     private String notes;
     private String proofImageUrl;
     private String beneficiary;
+    private String addressText;
+    private Double latitude;
+    private Double longitude;
     private LocalDateTime createdAt;
     private LocalDateTime deliveredAt;
 }

@@ -321,6 +321,8 @@ public class OrderService {
         response.setPaymentStatus(order.getPayment() != null ? order.getPayment().getStatus() : null);
         response.setShippingAddressId(order.getShippingAddress().getId());
         response.setShippingAddress(formatAddress(order.getShippingAddress()));
+        response.setLatitude(order.getShippingAddress().getLatitude());
+        response.setLongitude(order.getShippingAddress().getLongitude());
         response.setTotalAmount(order.getTotalAmount());
         response.setStatus(order.getStatus().name());
         response.setStatusDescription(getStatusDescription(order.getStatus()));

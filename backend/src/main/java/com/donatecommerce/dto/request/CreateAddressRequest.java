@@ -19,6 +19,10 @@ public class CreateAddressRequest {
     private String addressLine;
     
     private String postalCode;
+
+    private Double latitude;
+
+    private Double longitude;
     
     private Boolean isDefault = false;
 }

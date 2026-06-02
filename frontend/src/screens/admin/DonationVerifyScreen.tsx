@@ -9,12 +9,14 @@ import {
   View,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Modal
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api/api';
 
-export default function DonationVerifyScreen() {
+export default function DonationVerifyScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +26,9 @@ export default function DonationVerifyScreen() {
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [beneficiaries, setBeneficiaries] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
+  
+  // Map Modal State
+  const [mapVisible, setMapVisible] = useState(false);
 
   useEffect(() => {
     fetchDonations();
@@ -97,8 +102,22 @@ export default function DonationVerifyScreen() {
       style={{ flex: 1, backgroundColor: theme.bg }}
     >
       <View style={[styles.header, { backgroundColor: theme.accent }]}>
-        <Text style={styles.headerTitle}>Saha Ekibi Paneli</Text>
-        <Text style={styles.headerSub}>Teslimat Kanıtlarını Sisteme Yükle</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={{ fontSize: 24, color: '#fff' }}>←</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Saha Ekibi Paneli</Text>
+            <Text style={styles.headerSub}>Teslimat Kanıtlarını Sisteme Yükle</Text>
+          </View>
+          <TouchableOpacity 
+            style={[styles.mapButton, { backgroundColor: 'white' }]}
+            onPress={() => setMapVisible(true)}
+          >
+            <Text style={{ fontSize: 18 }}>🗺️</Text>
+            <Text style={{ color: theme.accent, fontWeight: 'bold', marginLeft: 6, fontSize: 13 }}>Haritada Gör</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -135,6 +154,13 @@ export default function DonationVerifyScreen() {
               </View>
               <Text style={[styles.donorText, { color: theme.text3 }]}>Bağışçı: {item.donorName}</Text>
               <Text style={[styles.quantityText, { color: theme.text3 }]}>Adet: {item.quantity}</Text>
+              
+              {item.addressText && (
+                <View style={[styles.addressBox, { backgroundColor: theme.bg }]}>
+                  <Text style={{ fontSize: 16, marginBottom: 2 }}>📍</Text>
+                  <Text style={[styles.addressText, { color: theme.text1 }]}>{item.addressText}</Text>
+                </View>
+              )}
               {item.notes && (
                 <View style={[styles.noteBox, { backgroundColor: theme.bg }]}>
                   <Text style={[styles.noteText, { color: theme.text4 }]}>Not: {item.notes}</Text>
@@ -197,6 +223,48 @@ export default function DonationVerifyScreen() {
           </View>
         )}
       />
+
+      <Modal visible={mapVisible} animationType="slide" onRequestClose={() => setMapVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: theme.bg }}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.surface }]}>
+            <TouchableOpacity onPress={() => setMapVisible(false)} style={styles.backBtn}>
+              <Text style={{ fontSize: 24, color: theme.text1 }}>✕</Text>
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.text1, fontSize: 18 }]}>Teslimat Haritası</Text>
+            <View style={{ width: 40 }} />
+          </View>
+          <WebView
+            originWhitelist={['*']}
+            source={{ html: `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+                <style>body { padding: 0; margin: 0; } html, body, #map { height: 100%; width: 100%; }</style>
+              </head>
+              <body>
+                <div id="map"></div>
+                <script>
+                  var map = L.map('map').setView([41.0082, 28.9784], 11);
+                  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+                  var bounds = [];
+                  ${donations.filter(d => d.latitude && d.longitude).map(d => `
+                    var marker = L.marker([${d.latitude}, ${d.longitude}]).addTo(map);
+                    marker.bindPopup("<b>${d.productName}</b><br/>${d.addressText || ''}");
+                    bounds.push([${d.latitude}, ${d.longitude}]);
+                  `).join('\n')}
+                  if(bounds.length > 0) { map.fitBounds(bounds, {padding: [50, 50]}); }
+                </script>
+              </body>
+              </html>
+            `}}
+            javaScriptEnabled={true}
+            style={{ flex: 1 }}
+          />
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -209,9 +277,15 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 24,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'android' ? 45 : 60,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    marginRight: 8,
   },
   headerTitle: {
     fontSize: 24,
@@ -236,6 +310,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  mapButton: {
+    flexDirection: 'row',
+    height: 38,
+    borderRadius: 19,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+  },
+  addressBox: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addressText: {
+    fontSize: 13,
+    flex: 1,
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 45 : 60,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   cardInfo: {
     marginBottom: 16,

@@ -14,6 +14,8 @@ public class AddressResponse {
     private String district;
     private String addressLine;
     private String postalCode;
+    private Double latitude;
+    private Double longitude;
     private Boolean isDefault;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

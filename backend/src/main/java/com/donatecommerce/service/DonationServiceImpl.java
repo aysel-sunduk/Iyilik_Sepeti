@@ -61,6 +61,12 @@ public class DonationServiceImpl implements DonationService {
                         .amount(item.getSubtotal())
                         .status(DonationStatus.PENDING)
                         .notes(order.getNotes())
+                        .addressText(String.format("%s, %s/%s", 
+                                order.getShippingAddress().getAddressLine(), 
+                                order.getShippingAddress().getDistrict(), 
+                                order.getShippingAddress().getCity()))
+                        .latitude(order.getShippingAddress().getLatitude())
+                        .longitude(order.getShippingAddress().getLongitude())
                         .build();
                 
                 donationRepository.save(donation);
@@ -118,6 +124,9 @@ public class DonationServiceImpl implements DonationService {
                 .notes(donation.getNotes())
                 .proofImageUrl(donation.getProofImageUrl())
                 .beneficiary(donation.getBeneficiary())
+                .addressText(donation.getAddressText())
+                .latitude(donation.getLatitude())
+                .longitude(donation.getLongitude())
                 .createdAt(donation.getCreatedAt())
                 .deliveredAt(donation.getDeliveredAt())
                 .build();

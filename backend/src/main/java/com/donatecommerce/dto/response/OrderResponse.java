@@ -16,6 +16,8 @@ public class OrderResponse {
     private String paymentStatus;
     private UUID shippingAddressId;
     private String shippingAddress;
+    private Double latitude;
+    private Double longitude;
     private BigDecimal totalAmount;
     private String status;
     private String statusDescription;

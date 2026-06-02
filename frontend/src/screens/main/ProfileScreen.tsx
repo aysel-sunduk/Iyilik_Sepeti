@@ -139,7 +139,7 @@ export default function ProfileScreen({ navigation }: any) {
             onPress={() => setTopUpModalVisible(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.statValue}>₺{user?.walletBalance || 0}</Text>
+            <Text style={[styles.statValue, { color: theme.text1 }]}>₺{user?.walletBalance || 0}</Text>
             <Text style={[styles.statLabel, { color: theme.text3 }]}>Cüzdan Bakiyesi</Text>
             <Text style={{ fontSize: 10, color: theme.accent, fontWeight: 'bold', marginTop: 4 }}>Bakiye Yükle ➕</Text>
             <Text style={styles.statEmoji}>💰</Text>

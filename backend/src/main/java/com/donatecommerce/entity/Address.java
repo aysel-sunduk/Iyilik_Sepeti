@@ -52,6 +52,12 @@ public class Address {
     @Column(name = "postal_code", length = 255)
     private String postalCode;
 
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @Builder.Default
     @Column(name = "is_default")
     private Boolean isDefault = false;
