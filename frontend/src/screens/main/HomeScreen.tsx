@@ -25,7 +25,6 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api/api';
 import { CategoryResponse as Category, ProductResponse as Product, CampaignResponse as Campaign } from '../../services/api/types';
 import { Modal } from 'react-native';
-import { WebView } from 'react-native-webview';
 
 const LogoutIcon = ({ color }: { color: string }) => (
   <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -67,15 +66,8 @@ export default function HomeScreen({ navigation }: any) {
   const [modalContent, setModalContent] = useState({ title: '', message: '', icon: '' });
   const [logoutSuccessVisible, setLogoutSuccessVisible] = useState(false);
   const [loginSuccessVisible, setLoginSuccessVisible] = useState(false);
-  const [videoModalVisible, setVideoModalVisible] = useState(false);
-  const [currentVideoId, setCurrentVideoId] = useState('');
   
   const justLoggedIn = useSelector((state: RootState) => state.auth.justLoggedIn);
-
-  const openVideo = (videoId: string) => {
-    setCurrentVideoId(videoId);
-    setVideoModalVisible(true);
-  };
 
   const showAlert = (title: string, message: string, icon: string = '✨') => {
     setModalContent({ title, message, icon });
@@ -388,23 +380,21 @@ export default function HomeScreen({ navigation }: any) {
 
           {/* Stories */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.storiesContainer} contentContainerStyle={styles.storiesContent}>
-            <TouchableOpacity style={styles.storyItem} onPress={() => openVideo('21X5lGlDOfg')}>
+            <TouchableOpacity style={styles.storyItem} onPress={() => Linking.openURL('https://www.youtube.com/watch?v=rkXhnbSXDnI')}>
               <View style={[styles.storyCircle, { borderColor: '#10B981' }]}>
                 <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{ fontSize: 24 }}>🎬</Text></View>
               </View>
               <Text style={[styles.storyText, { color: theme.text2 }]}>Canlı</Text>
             </TouchableOpacity>
-            {['Mama Dağıtımı', 'Yeni Okul', 'Sokak Dostları', 'Duyuru'].map((story, index) => {
+            {['Sokak Dostları', 'Köy Okulu'].map((story, index) => {
               const videoIds = [
-                'PpG0zAEP5GE', // Kedi Belgeseli
-                'iG9CE55wbtY', // Okul/Eğitim
-                'jfKfPfyJRdk', // Lofi 
-                'jNQXAC9IVRw'  // Duyuru
+                'gK0pSWpDBI8', // Yeni Sokak Hayvanları Videosu
+                '_H0Ny6n3Zsg', // Köy Okulu Tadilatı / Yardımı
               ];
               return (
-              <TouchableOpacity key={index} style={styles.storyItem} onPress={() => openVideo(videoIds[index])}>
+              <TouchableOpacity key={index} style={styles.storyItem} onPress={() => Linking.openURL('https://www.youtube.com/watch?v=' + videoIds[index])}>
                 <View style={[styles.storyCircle, { borderColor: theme.accent }]}>
-                  <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{ fontSize: 24 }}>{['🐕', '🎒', '🦴', '📢'][index]}</Text></View>
+                  <View style={[styles.storyInner, { backgroundColor: theme.isDark ? theme.bg : '#F3F4F6' }]}><Text style={{ fontSize: 24 }}>{['🐕', '🎒'][index]}</Text></View>
                 </View>
                 <Text style={[styles.storyText, { color: theme.text2 }]} numberOfLines={1}>{story}</Text>
               </TouchableOpacity>
@@ -699,35 +689,6 @@ export default function HomeScreen({ navigation }: any) {
             </View>
             <Text style={[styles.modalTitle, { color: theme.text1, marginTop: 20 }]}>Başarıyla Çıkış Yapıldı</Text>
             <Text style={[styles.modalMessage, { color: theme.text3, marginBottom: 0 }]}>Yine bekleriz, keyifli alışverişler! ✨</Text>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Video Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={videoModalVisible}
-        onRequestClose={() => setVideoModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.surface, width: '95%', height: 300, padding: 0, overflow: 'hidden' }]}>
-            <TouchableOpacity 
-              style={[styles.closeModal, { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 15, padding: 8, zIndex: 999 }]} 
-              onPress={() => setVideoModalVisible(false)}
-            >
-              <Text style={{ fontSize: 16, color: 'white' }}>✕</Text>
-            </TouchableOpacity>
-            <WebView
-              source={{ html: `<html><body style="margin:0;padding:0;background-color:#000;display:flex;justify-content:center;align-items:center;height:100vh;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></body></html>` }}
-              style={{ flex: 1, width: '100%', opacity: 0.99, backgroundColor: '#000' }}
-              allowsFullscreenVideo={true}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              originWhitelist={['*']}
-              mediaPlaybackRequiresUserAction={false}
-              startInLoadingState={true}
-            />
           </View>
         </View>
       </Modal>
