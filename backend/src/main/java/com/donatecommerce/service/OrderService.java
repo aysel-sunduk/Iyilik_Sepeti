@@ -36,6 +36,9 @@ import com.donatecommerce.repository.PaymentRepository;
 import com.donatecommerce.repository.ProductRepository;
 import com.donatecommerce.repository.RefundRepository;
 import com.donatecommerce.repository.UserRepository;
+import com.donatecommerce.repository.DonationRepository;
+import com.donatecommerce.entity.DonationStatus;
+import com.donatecommerce.entity.Donation;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,7 +53,9 @@ public class OrderService {
     private final PaymentRepository paymentRepository;
     private final RefundRepository refundRepository;
     private final UserRepository userRepository;
+    private final DonationRepository donationRepository;
     private final DonationService donationService;
+    private final BadgeService badgeService;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String email) {
@@ -86,7 +91,11 @@ public class OrderService {
                                 " (Mevcut: " + product.getStock() + ")");
             }
 
-            boolean isDonation = product.getCampaign() != null || "BAĞIŞ".equalsIgnoreCase(product.getCategory());
+            // Frontend'den gelen isDonation flag'ı varsa onu kullan, yoksa ürün kategorisine bak
+            boolean isDonation = Boolean.TRUE.equals(itemRequest.getIsDonation())
+                    || product.getCampaign() != null
+                    || "BAĞIŞ".equalsIgnoreCase(product.getCategory());
+
             BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
             totalAmount = totalAmount.add(subtotal);
 
@@ -174,6 +183,9 @@ public class OrderService {
 
         // Bağış kayıtlarını oluştur
         donationService.createDonationsFromOrder(order);
+        
+        // Rozetleri ve Puanları Güncelle
+        badgeService.evaluateBadgesAndPoints(buyer, orderItems);
 
         // Ödeme başarılı simülasyonu
         payment.setStatus("success");
@@ -292,6 +304,16 @@ public class OrderService {
         order.setTrackingNumber(trackingNumber != null && !trackingNumber.isBlank() ? trackingNumber : "TRK" + System.currentTimeMillis());
         
         orderRepository.save(order);
+        
+        // Siparişe bağlı bağışların durumunu "Yolda" (SHIPPING) olarak güncelle
+        if (order.getPayment() != null) {
+            List<Donation> donations = donationRepository.findByPaymentId(order.getPayment().getId());
+            for (Donation d : donations) {
+                d.setStatus(DonationStatus.SHIPPING);
+                donationRepository.save(d);
+            }
+        }
+        
         return mapToOrderResponse(order);
     }
 
@@ -308,6 +330,17 @@ public class OrderService {
         order.setDeliveredAt(LocalDateTime.now());
         
         orderRepository.save(order);
+        
+        // Siparişe bağlı bağışların durumunu "Teslim Edildi" (DELIVERED) olarak güncelle
+        if (order.getPayment() != null) {
+            List<Donation> donations = donationRepository.findByPaymentId(order.getPayment().getId());
+            for (Donation d : donations) {
+                d.setStatus(DonationStatus.DELIVERED);
+                d.setDeliveredAt(LocalDateTime.now());
+                donationRepository.save(d);
+            }
+        }
+        
         return mapToOrderResponse(order);
     }
 

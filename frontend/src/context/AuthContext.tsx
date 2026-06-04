@@ -51,6 +51,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             role: finalRole,
             iyilikBalance: updatedUser.iyilikBalance,
             walletBalance: updatedUser.walletBalance,
+            impactPoints: updatedUser.impactPoints,
+            totalDonationsCount: updatedUser.totalDonationsCount,
+            volunteerLevel: updatedUser.volunteerLevel,
           }));
           dispatch(fetchCart());
         } else {
@@ -97,6 +100,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           role: finalRole,
           iyilikBalance: updatedUser.iyilikBalance,
           walletBalance: updatedUser.walletBalance,
+          impactPoints: updatedUser.impactPoints,
+          totalDonationsCount: updatedUser.totalDonationsCount,
+          volunteerLevel: updatedUser.volunteerLevel,
         }));
         dispatch(fetchCart());
         return true;
@@ -208,6 +214,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           role: finalRole,
           iyilikBalance: updatedUser.iyilikBalance,
           walletBalance: updatedUser.walletBalance,
+          impactPoints: updatedUser.impactPoints,
+          totalDonationsCount: updatedUser.totalDonationsCount,
+          volunteerLevel: updatedUser.volunteerLevel,
         }));
       }
     } catch (error) {

@@ -10,14 +10,7 @@ import api from '../../services/api/api';
 
 const { width } = Dimensions.get('window');
 
-// Mock Data for Badges and Certificates
-const MOCK_BADGES = [
-  { id: 1, name: 'İlk Adım', emoji: '🌱', color: '#10B981', desc: 'İlk bağışını yaptın!' },
-  { id: 2, name: 'Patidostu', emoji: '🐾', color: '#FB923C', desc: 'Sokak hayvanlarına destek oldun.' },
-  { id: 3, name: 'Eğitim Gönüllüsü', emoji: '📚', color: '#8B5CF6', desc: 'Eğitime katkı sağladın.' },
-  { id: 4, name: 'Hayat Kurtaran', emoji: '❤️', color: '#EF4444', desc: '10+ hayata dokundun.' },
-];
-
+// Mock Data for Certificates
 const MOCK_CERTIFICATES = [
   { id: 1, date: '12.04.2026', title: 'Deprem Desteği', image: '🎒' },
   { id: 2, date: '05.04.2026', title: 'Sokak Hayvanları', image: '🐾' },
@@ -35,10 +28,21 @@ export default function ProfileScreen({ navigation }: any) {
   const { theme, themeMode, setThemeMode } = useTheme();
   const dispatch = useDispatch();
   const { user, refreshUser, logout } = useAuth();
+  const [userBadges, setUserBadges] = useState<import('../../services/api/types').UserBadge[]>([]);
   
+  const loadBadges = async () => {
+    try {
+      const res = await api.badges.getMyBadges();
+      setUserBadges(res || []);
+    } catch (err) {
+      console.error('Failed to load badges:', err);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       refreshUser();
+      loadBadges();
     }, [])
   );
   
@@ -72,11 +76,38 @@ export default function ProfileScreen({ navigation }: any) {
     }
   };
   
-  // Mock Stats
-  const impactPoints = 1250;
-  const livesTouched = 12;
-  const volunteerLevel = "Altın Gönüllü";
-  const levelProgress = 0.75; // 75%
+  const impactPoints = user?.impactPoints || 0;
+  const livesTouched = user?.totalDonationsCount || 0;
+  const volunteerLevel = user?.volunteerLevel || "Yeni Gönüllü";
+  
+  // Seviye İlerleme Hesabı — BadgeService'teki milestone barajlarıyla eşleşiyor
+  let levelProgress = 0;
+  let nextGoal = 50;
+  let currentLevelLabel = "Yeni Gönüllü";
+  let nextLevelLabel = "Gümüş Gönüllü";
+
+  if (impactPoints < 50) {
+    levelProgress = impactPoints / 50;
+    nextGoal = 50;
+    currentLevelLabel = "Yeni Gönüllü";
+    nextLevelLabel = "🌱 Gümüş Gönüllü";
+  } else if (impactPoints < 250) {
+    levelProgress = (impactPoints - 50) / 200;
+    nextGoal = 250;
+    currentLevelLabel = "🌱 Gümüş Gönüllü";
+    nextLevelLabel = "🥇 Altın Gönüllü";
+  } else if (impactPoints < 1000) {
+    levelProgress = (impactPoints - 250) / 750;
+    nextGoal = 1000;
+    currentLevelLabel = "🥇 Altın Gönüllü";
+    nextLevelLabel = "💎 Efsane Gönüllü";
+  } else {
+    levelProgress = 1;
+    nextGoal = impactPoints;
+    currentLevelLabel = "💎 Efsane Gönüllü";
+    nextLevelLabel = "Maksimum Seviye 🎉";
+  }
+
 
   const handleLogoutPress = () => {
     setLogoutModalVisible(true);
@@ -91,6 +122,11 @@ export default function ProfileScreen({ navigation }: any) {
       setLogoutSuccessVisible(false);
       await logout();
     }, 1500);
+  };
+
+  const getBadgeColor = (index: number) => {
+    const colors = ['#10B981', '#FB923C', '#8B5CF6', '#EF4444', '#3B82F6', '#EC4899'];
+    return colors[index % colors.length];
   };
 
   return (
@@ -123,8 +159,8 @@ export default function ProfileScreen({ navigation }: any) {
           {/* Level Progress Bar */}
           <View style={styles.levelProgressSection}>
             <View style={styles.levelLabels}>
-              <Text style={[styles.levelLabel, { color: theme.text3 }]}>Level 12</Text>
-              <Text style={[styles.levelLabel, { color: theme.text3 }]}>Next: 250 Puan</Text>
+              <Text style={[styles.levelLabel, { color: theme.text3 }]}>{currentLevelLabel} ({impactPoints} Puan)</Text>
+              <Text style={[styles.levelLabel, { color: theme.text3 }]}>Next: {nextGoal} Puan</Text>
             </View>
             <View style={[styles.progressBarBg, { backgroundColor: theme.bg }]}>
               <View style={[styles.progressBarFill, { width: `${levelProgress * 100}%`, backgroundColor: theme.accent }]} />
@@ -151,6 +187,19 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
         </View>
 
+        <View style={styles.statsGrid}>
+          <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.statValue, { color: theme.text1 }]}>{impactPoints}</Text>
+            <Text style={[styles.statLabel, { color: theme.text3 }]}>Etki Puanı</Text>
+            <Text style={styles.statEmoji}>🌟</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.statValue, { color: theme.accent }]}>{livesTouched}</Text>
+            <Text style={[styles.statLabel, { color: theme.text3 }]}>Bağış Adedi</Text>
+            <Text style={styles.statEmoji}>❤️</Text>
+          </View>
+        </View>
+
 
         {/* Badges Section */}
         <View style={styles.section}>
@@ -158,16 +207,25 @@ export default function ProfileScreen({ navigation }: any) {
             <Text style={[styles.sectionTitle, { color: theme.text1 }]}>🏆 Rozetlerin</Text>
             <TouchableOpacity><Text style={[styles.seeAll, { color: theme.accent }]}>Tümü</Text></TouchableOpacity>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
-            {MOCK_BADGES.map(badge => (
-              <TouchableOpacity key={badge.id} style={[styles.badgeItem, { backgroundColor: theme.surface }]}>
-                <View style={[styles.badgeIcon, { backgroundColor: badge.color + '15' }]}>
-                  <Text style={{fontSize: 24}}>{badge.emoji}</Text>
-                </View>
-                <Text style={[styles.badgeName, { color: theme.text1 }]} numberOfLines={1}>{badge.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {userBadges.length === 0 ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: theme.text3, textAlign: 'center' }}>Henüz rozet kazanmadınız. Bağış yaparak rozetler kazanabilirsiniz!</Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
+              {userBadges.map((badge, index) => {
+                const color = getBadgeColor(index);
+                return (
+                  <TouchableOpacity key={badge.id} style={[styles.badgeItem, { backgroundColor: theme.surface }]}>
+                    <View style={[styles.badgeIcon, { backgroundColor: color + '15' }]}>
+                      <Text style={{fontSize: 24}}>{badge.iconUrl}</Text>
+                    </View>
+                    <Text style={[styles.badgeName, { color: theme.text1 }]} numberOfLines={1}>{badge.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
         {/* Certificate Gallery */}

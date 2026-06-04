@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   Linking
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
@@ -45,11 +46,12 @@ const CartIcon = ({ color }: { color: string }) => (
 export default function HomeScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useDispatch();
-  const { logout, user } = useAuth();
+  const { logout, user, refreshUser } = useAuth();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const userFirstName = user?.firstName ?? 'Kullanıcı';
   const iyilikBalance = user?.iyilikBalance ?? 0;
   const walletBalance = user?.walletBalance ?? 0;
+  const impactPoints = user?.impactPoints ?? 0;
 
   const [activeFilter, setActiveFilter] = useState('Hepsi');
   const [searchText, setSearchText] = useState('');
@@ -119,6 +121,15 @@ export default function HomeScreen({ navigation }: any) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Checkout'tan döndükten sonra puanları güncellemek için odak değişikliğini dinle
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        refreshUser();
+      }
+    }, [user?.id])
+  );
 
   useEffect(() => {
     filterProducts();
@@ -297,7 +308,7 @@ export default function HomeScreen({ navigation }: any) {
                       <View style={styles.glassBadge}>
                         <View style={styles.badgeSegment}>
                           <Text style={styles.badgeEmoji}>🏆</Text>
-                          <Text style={styles.badgeTextVal}>{iyilikBalance}</Text>
+                          <Text style={styles.badgeTextVal}>{impactPoints}</Text>
                           <Text style={styles.badgeLabel}>Puan</Text>
                         </View>
                         <View style={styles.badgeDivider} />

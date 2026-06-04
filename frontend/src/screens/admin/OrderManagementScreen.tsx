@@ -16,6 +16,12 @@ export default function OrderManagementScreen({ navigation }: any) {
   const [shippingCompany, setShippingCompany] = useState('İyilik Express');
   const [trackingNumber, setTrackingNumber] = useState('');
 
+  // Custom Alert states
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [orderToDeliver, setOrderToDeliver] = useState<string | null>(null);
+
   useFocusEffect(
     useCallback(() => {
       fetchOrders();
@@ -42,40 +48,23 @@ export default function OrderManagementScreen({ navigation }: any) {
       setShipModalVisible(false);
       setSelectedOrderId(null);
       setTrackingNumber('');
-      Alert.alert('Başarılı', 'Sipariş kargoya verildi (SHIPPED) durumuna güncellendi.');
+      
+      setSuccessMessage('Sipariş başarıyla kargoya verildi.');
+      setSuccessModalVisible(true);
+      
       fetchOrders();
     } catch (error) {
       console.error('Ship order error:', error);
-      Alert.alert('Hata', 'Sipariş durumunu güncellerken hata oluştu.');
+      setSuccessMessage('Sipariş durumunu güncellerken hata oluştu.');
+      setSuccessModalVisible(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeliverOrder = async (orderId: string) => {
-    Alert.alert(
-      'Siparişi Teslim Et',
-      'Bu siparişi teslim edildi (DELIVERED) durumuna güncellemek istediğinizden emin misiniz?',
-      [
-        { text: 'Vazgeç', style: 'cancel' },
-        {
-          text: 'Evet, Teslim Et',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await api.orders.deliver(orderId);
-              Alert.alert('Başarılı', 'Sipariş teslim edildi (DELIVERED) durumuna güncellendi.');
-              fetchOrders();
-            } catch (error) {
-              console.error('Deliver order error:', error);
-              Alert.alert('Hata', 'Sipariş teslim edilemedi.');
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleDeliverOrder = (orderId: string) => {
+    setOrderToDeliver(orderId);
+    setConfirmModalVisible(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -260,6 +249,73 @@ export default function OrderManagementScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
+
+      {/* Success Modal */}
+      <Modal visible={successModalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface, alignItems: 'center', paddingVertical: 30 }]}>
+            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#10B98120', justifyContent: 'center', alignItems: 'center', marginBottom: 15 }}>
+               <Text style={{ fontSize: 30 }}>✨</Text>
+            </View>
+            <Text style={[styles.modalTitle, { color: theme.text1, textAlign: 'center', marginBottom: 10 }]}>İşlem Tamamlandı</Text>
+            <Text style={{ color: theme.text2, textAlign: 'center', marginBottom: 25, fontSize: 16 }}>{successMessage}</Text>
+            
+            <TouchableOpacity
+              style={{ backgroundColor: theme.accent, width: '100%', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+              onPress={() => setSuccessModalVisible(false)}
+            >
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Tamam</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal visible={confirmModalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#F59E0B20', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 15 }}>
+               <Text style={{ fontSize: 30 }}>📦</Text>
+            </View>
+            <Text style={[styles.modalTitle, { color: theme.text1, textAlign: 'center' }]}>Siparişi Teslim Et</Text>
+            <Text style={{ color: theme.text2, textAlign: 'center', marginBottom: 25, fontSize: 15 }}>
+               Bu siparişi teslim edildi durumuna güncellemek istediğinizden emin misiniz?
+            </Text>
+            <View style={styles.modalActions}>
+               <TouchableOpacity
+                 style={[styles.modalBtn, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: 1 }]}
+                 onPress={() => {
+                   setConfirmModalVisible(false);
+                   setOrderToDeliver(null);
+                 }}
+               >
+                 <Text style={{ color: theme.text2, fontWeight: 'bold' }}>Vazgeç</Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 style={[styles.modalBtn, { backgroundColor: '#10B981' }]}
+                 onPress={async () => {
+                   setConfirmModalVisible(false);
+                   if (orderToDeliver) {
+                     try {
+                        setLoading(true);
+                        await api.orders.deliver(orderToDeliver);
+                        setSuccessMessage('Sipariş başarıyla teslim edildi!');
+                        setSuccessModalVisible(true);
+                        fetchOrders();
+                     } catch (e) {
+                        setSuccessMessage('Sipariş teslim edilemedi.');
+                        setSuccessModalVisible(true);
+                     } finally { setLoading(false); }
+                   }
+                 }}
+               >
+                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Teslim Et</Text>
+               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }

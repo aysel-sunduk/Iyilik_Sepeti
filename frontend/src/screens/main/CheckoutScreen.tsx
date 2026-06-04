@@ -112,7 +112,8 @@ export default function CheckoutScreen({ navigation }: any) {
       const orderData = {
         items: cartItems.map(item => ({
           productId: item.id,
-          quantity: item.quantity
+          quantity: item.quantity,
+          isDonation: item.type === 'donation'   // ← Bağış/satış tipini backend'e ilet
         })),
         shippingAddressId: selectedAddressId,
         paymentMethod: paymentMethod === 'wallet' ? 'WALLET' : 'CREDIT_CARD',
@@ -120,8 +121,9 @@ export default function CheckoutScreen({ navigation }: any) {
         orderType: finalOrderType,
         receiverName: finalReceiverName,
         giftMessage: finalGiftMessage,
-        roundUpAmount: isRoundUp ? roundUpAmount : 0.0 // Backend'e bağış miktarını gönderiyoruz
+        roundUpAmount: isRoundUp ? roundUpAmount : 0.0
       };
+
 
       // 4. API Çağrısı
       await api.orders.create(orderData);

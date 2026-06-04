@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     position: 'relative'
   },
   loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill as any,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10

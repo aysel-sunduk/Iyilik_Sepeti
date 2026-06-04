@@ -2,11 +2,13 @@ package com.donatecommerce.service;
 
 import com.donatecommerce.entity.Category;
 import com.donatecommerce.entity.Product;
+import com.donatecommerce.entity.Badge;
 import com.donatecommerce.entity.Campaign;
 import com.donatecommerce.entity.CategoryType;
 import com.donatecommerce.repository.CategoryRepository;
 import com.donatecommerce.repository.ProductRepository;
 import com.donatecommerce.repository.CampaignRepository;
+import com.donatecommerce.repository.BadgeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class SeedDataService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final CampaignRepository campaignRepository;
+    private final BadgeRepository badgeRepository;
 
     @Transactional
     public int cleanAndSeedTurkishProducts() {
@@ -33,6 +36,11 @@ public class SeedDataService {
         productRepository.deleteAll();
         campaignRepository.deleteAll();
         categoryRepository.deleteAll();
+        // userBadgeRepository ve badgeRepository temizliğini UserService yapabilir ama şimdilik burada kalsın
+        badgeRepository.deleteAll();
+
+        // 1.5 Rozetleri oluştur
+        seedBadges();
 
         // 2. Kampanyaları Oluştur
         log.info("Kampanyalar oluşturuluyor...");
@@ -325,5 +333,23 @@ public class SeedDataService {
         p.setStockQuantity(100);
         p.setCreatedAt(LocalDateTime.now());
         return p;
+    }
+
+    private void seedBadges() {
+        log.info("Rozetler oluşturuluyor...");
+        createBadge("İlk Adım", "İlk bağışını yaptın!", "🌱", "totalDonationsCount >= 1");
+        createBadge("Patidostu", "Sokak hayvanlarına destek oldun.", "🐾", "Kategori: hayvan");
+        createBadge("Eğitim Gönüllüsü", "Eğitime katkı sağladın.", "📚", "Kategori: çocuk");
+        createBadge("Hayat Kurtaran", "10+ hayata dokundun.", "❤️", "totalDonationsCount >= 10");
+    }
+
+    private void createBadge(String name, String desc, String icon, String criteria) {
+        Badge badge = new Badge();
+        badge.setName(name);
+        badge.setDescription(desc);
+        badge.setIconUrl(icon); // We are storing emojis in iconUrl for simplicity
+        badge.setCriteria(criteria);
+        badge.setCreatedAt(LocalDateTime.now());
+        badgeRepository.save(badge);
     }
 }

@@ -221,6 +221,12 @@ export const donationApi = {
     apiClient.patch<any>(`/api/donations/${donationId}/status`, { status }),
 };
 
+// Badges Endpoints
+export const badgesApi = {
+  getMyBadges: () =>
+    apiClient.get<import('./types').UserBadge[]>('/api/badges/my-badges'),
+};
+
 // Donation Hub Endpoints
 export const hubsApi = {
   getNear: (lat: number, lng: number, radiusKm: number = 10.0) =>
@@ -239,6 +245,7 @@ const api = {
   favorites: favoriteApi,
   donations: donationApi,
   hubs: hubsApi,
+  badges: badgesApi,
 };
 
 export default api;

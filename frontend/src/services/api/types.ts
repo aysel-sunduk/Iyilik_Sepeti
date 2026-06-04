@@ -91,9 +91,21 @@ export interface User {
   lastLogin?: string;
   walletBalance: number;
   iyilikBalance: number;
+  impactPoints: number;
+  totalDonationsCount: number;
+  volunteerLevel: string;
 }
 
 export interface UserResponse extends User {}
+
+export interface UserBadge {
+  id: string;
+  badgeId: string;
+  name: string;
+  description: string;
+  iconUrl: string;
+  earnedAt: string;
+}
 
 // Error Types
 export interface ApiError {

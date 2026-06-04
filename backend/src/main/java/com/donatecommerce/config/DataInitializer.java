@@ -82,6 +82,25 @@ public class DataInitializer implements CommandLineRunner {
         if (donationHubRepository.count() == 0) {
             seedDonationHubs();
         }
+
+        // --- MIGRATION: Tüm kullanıcıların impactPoints değerini yeni 10 puanlık sisteme göre güncelle ---
+        userRepository.findAll().forEach(user -> {
+            int count = user.getTotalDonationsCount() != null ? user.getTotalDonationsCount() : 0;
+            int correctPoints = count * 10;
+            user.setImpactPoints(correctPoints);
+            
+            if (correctPoints >= 1000) {
+                user.setVolunteerLevel("Efsane Gönüllü");
+            } else if (correctPoints >= 250) {
+                user.setVolunteerLevel("Altın Gönüllü");
+            } else if (correctPoints >= 50) {
+                user.setVolunteerLevel("Gümüş Gönüllü");
+            } else {
+                user.setVolunteerLevel("Yeni Gönüllü");
+            }
+            userRepository.save(user);
+        });
+        System.out.println("DEBUG: Kullanıcı puanları yeni sisteme göre (1 bağış = 10 puan) güncellendi.");
     }
 
     private void seedMockUsers() {

@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface DonationRepository extends JpaRepository<Donation, UUID> {
     List<Donation> findByDonorEmailOrderByCreatedAtDesc(String email);
     List<Donation> findByCampaignId(UUID campaignId);
+    List<Donation> findByPaymentId(UUID paymentId);
 }

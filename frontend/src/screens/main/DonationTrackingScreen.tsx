@@ -1,19 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { FlatList, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 import api from '../../services/api/api';
 
-export default function DonationTrackingScreen() {
+export default function DonationTrackingScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [selectedProof, setSelectedProof] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDonations();
-  }, []);
+  // Her sekme odaklandığında (checkout'tan dönünce dahil) yenile
+  useFocusEffect(
+    useCallback(() => {
+      fetchDonations();
+    }, [])
+  );
 
   const fetchDonations = async () => {
     try {
@@ -102,7 +106,15 @@ export default function DonationTrackingScreen() {
           const status = item.status?.toLowerCase();
           
           return (
-            <View style={[styles.card, { backgroundColor: theme.surface }]}>
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                if (item.orderId) {
+                  navigation.navigate('OrderTracking', { orderId: item.orderId });
+                }
+              }}
+              style={[styles.card, { backgroundColor: theme.surface }]}
+            >
               <View style={styles.cardHeader}>
                 <Text style={[styles.productName, { color: theme.text1 }]}>
                   {item.productName || 'Bağış Paketi'} x{item.quantity || 1}
@@ -148,7 +160,7 @@ export default function DonationTrackingScreen() {
                   </Text>
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
           );
         }}
       />

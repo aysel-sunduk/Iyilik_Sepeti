@@ -29,26 +29,29 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
   useEffect(() => {
     let interval: any;
     if (order && order.status === 'SHIPPED') {
-      // Calculate initial progress based on when the order was shipped
+      // Siparişin kargolanma tarihini baz alarak geçen saati hesapla
       const startSecs = order.shippedAt ? new Date(order.shippedAt).getTime() : new Date(order.createdAt).getTime();
       const currentSecs = new Date().getTime();
-      const elapsedMinutes = (currentSecs - startSecs) / 60000;
+      const elapsedHours = (currentSecs - startSecs) / (1000 * 60 * 60);
       
-      // Let's assume a full simulated delivery takes 10 minutes (600,000ms)
-      // If we are testing or just shipped, let's start at a minimum of 10%
-      const initialProgress = Math.min(0.99, Math.max(0.1, elapsedMinutes * 0.1));
+      // Kargo teslim süresini standart 48 saat (2 gün) olarak belirliyoruz
+      const deliveryDurationHours = 48;
+      
+      // Başlangıç olarak her kargoya minimum %10 progress veriyoruz (kargoya verildiğini belli etmek için)
+      const calculatedProgress = 0.1 + (elapsedHours / deliveryDurationHours) * 0.9;
+      const initialProgress = Math.min(0.99, Math.max(0.1, calculatedProgress));
       setProgress(initialProgress);
 
-      // Increment progress by 1% (0.01) every 2 seconds for a lively real-time effect
+      // Kullanıcı sayfayı izlerken "canlılık" hissiyatı vermek için mikroskobik düzeyde yavaş yavaş artırıyoruz
       interval = setInterval(() => {
         setProgress(prev => {
-          if (prev >= 1.0) {
+          if (prev >= 0.99) {
             clearInterval(interval);
-            return 1.0;
+            return 0.99;
           }
-          return prev + 0.01;
+          return prev + 0.0001; // Ekranda saniyelik uçarak gitmek yerine yavaş yavaş ilerlesin
         });
-      }, 2000);
+      }, 5000);
     } else if (order && order.status === 'DELIVERED') {
       setProgress(1.0);
     }
@@ -194,7 +197,7 @@ export default function OrderTrackingScreen({ route, navigation }: any) {
               <View style={styles.progressRow}>
                 <Text style={[styles.progressPct, { color: theme.accent }]}>Yolculuk: %{Math.round(progress * 100)}</Text>
                 <Text style={[styles.progressTime, { color: theme.text3 }]}>
-                  Tahmini Teslimat: {progress >= 1.0 ? 'Teslim Edildi' : `${Math.max(1, Math.round((1 - progress) * 15))} dk`}
+                  {progress >= 1.0 ? 'Teslim Edildi' : `Tahmini Teslimat: ${order.shippedAt ? new Date(new Date(order.shippedAt).getTime() + 48*60*60*1000).toLocaleDateString('tr-TR') : '2 Gün'}`}
                 </Text>
               </View>
               <Text style={[styles.trackingStatusText, { color: theme.text1 }]}>

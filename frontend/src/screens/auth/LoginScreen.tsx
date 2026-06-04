@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bgPattern: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   decoCircle: {
     position: 'absolute',

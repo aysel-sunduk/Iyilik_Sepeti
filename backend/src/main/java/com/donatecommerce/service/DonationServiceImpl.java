@@ -4,6 +4,7 @@ import com.donatecommerce.dto.response.DonationResponse;
 import com.donatecommerce.entity.*;
 import com.donatecommerce.repository.DonationRepository;
 import com.donatecommerce.repository.OrderItemRepository;
+import com.donatecommerce.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ public class DonationServiceImpl implements DonationService {
 
     private final DonationRepository donationRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -110,8 +112,32 @@ public class DonationServiceImpl implements DonationService {
     }
 
     private DonationResponse mapToResponse(Donation donation) {
+        UUID orderId = null;
+        if (donation.getPayment() != null) {
+            Order order = orderRepository.findByPaymentId(donation.getPayment().getId()).orElse(null);
+            if (order != null) {
+                orderId = order.getId();
+                
+                // EKSİK VEYA ESKİ KALMIŞ DURUMLARI DİNAMİK SENKRONİZE ET
+                boolean needsUpdate = false;
+                if (order.getStatus() == com.donatecommerce.entity.OrderStatus.SHIPPED && donation.getStatus() == DonationStatus.PENDING) {
+                    donation.setStatus(DonationStatus.SHIPPING);
+                    needsUpdate = true;
+                } else if (order.getStatus() == com.donatecommerce.entity.OrderStatus.DELIVERED && donation.getStatus() != DonationStatus.DELIVERED) {
+                    donation.setStatus(DonationStatus.DELIVERED);
+                    donation.setDeliveredAt(order.getDeliveredAt() != null ? order.getDeliveredAt() : java.time.LocalDateTime.now());
+                    needsUpdate = true;
+                }
+                
+                if (needsUpdate) {
+                    donationRepository.save(donation);
+                }
+            }
+        }
+
         return DonationResponse.builder()
                 .id(donation.getId())
+                .orderId(orderId)
                 .donorId(donation.getDonor().getId())
                 .donorName(donation.getDonor().getFullName())
                 .productId(donation.getProduct() != null ? donation.getProduct().getId() : null)

@@ -14,7 +14,7 @@ class ApiClient {
 
   constructor() {
     this.baseURL = __DEV__
-      ? 'http://10.0.2.2:8080'  // Android Emulator için
+      ? 'http://localhost:8080'  // adb reverse sayesinde gerçek cihazda da çalışır
       : 'https://your-production-api.com';
 
     this.client = axios.create({

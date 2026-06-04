@@ -89,7 +89,7 @@ export default function AllProductsScreen({ navigation, route }: any) {
       } else if (activeCategory === 'Hepsi') {
         productsData = await api.products.getAll();
       } else {
-        productsData = await api.products.getByCategory(activeCategory);
+        productsData = await api.products.getByCategory(encodeURIComponent(activeCategory));
       }
       setProducts(productsData || []);
     } catch (error) {
@@ -114,6 +114,24 @@ export default function AllProductsScreen({ navigation, route }: any) {
       quantity: 1, 
       type: 'self' 
     }));
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(`"${product.name}" sepete eklendi 🛒`, ToastAndroid.SHORT);
+    }
+  };
+
+  const handleDonate = (product: Product) => {
+    dispatch(addToCart({ 
+      id: product.id, 
+      name: product.name, 
+      price: product.price, 
+      image: product.imageUrl || '📦', 
+      seller: product.category,
+      quantity: 1, 
+      type: 'donation' 
+    }));
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(`"${product.name}" bağış sepetine eklendi 🤲`, ToastAndroid.SHORT);
+    }
   };
 
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -169,11 +187,18 @@ export default function AllProductsScreen({ navigation, route }: any) {
           <Text style={[styles.productPrice, { color: theme.accent }]}>{item.price.toLocaleString('tr-TR')} ₺</Text>
           <TouchableOpacity 
             style={[styles.addButton, { backgroundColor: theme.accent }]}
-            onPress={() => handleAddToCart(item)}
+            onPress={(e) => { e.stopPropagation?.(); handleAddToCart(item); }}
           >
             <Text style={styles.addButtonText}>+</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          style={styles.donateButton}
+          onPress={(e) => { e.stopPropagation?.(); handleDonate(item); }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.donateButtonText}>🤲 Bağış Yap</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   )};
@@ -279,10 +304,23 @@ const styles = StyleSheet.create({
   productInfo: { padding: 12 },
   productName: { fontSize: 14, fontWeight: 'bold', marginBottom: 2 },
   productCategory: { fontSize: 11, marginBottom: 8 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   productPrice: { fontSize: 16, fontWeight: 'bold' },
   addButton: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   addButtonText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
+  donateButton: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1.5,
+    borderColor: '#FB923C',
+    borderRadius: 10,
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  donateButtonText: {
+    color: '#EA580C',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 100 }
 });

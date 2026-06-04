@@ -33,6 +33,9 @@ public class UserResponse {
     private Boolean isActive;
     private BigDecimal walletBalance;
     private BigDecimal iyilikBalance;
+    private Integer impactPoints;
+    private Integer totalDonationsCount;
+    private String volunteerLevel;
     private LocalDateTime createdAt;
     private LocalDateTime lastLogin;
 }

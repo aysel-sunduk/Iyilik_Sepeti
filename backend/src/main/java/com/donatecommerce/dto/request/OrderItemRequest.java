@@ -15,4 +15,7 @@ public class OrderItemRequest {
     @Min(value = 1, message = "Miktar en az 1 olmalıdır")
     @NotNull(message = "Miktar zorunludur")
     private Integer quantity;
+
+    // Frontend'den gelen bağış/satış bilgisi (true ise bağış olarak kaydedilir)
+    private Boolean isDonation;
 }

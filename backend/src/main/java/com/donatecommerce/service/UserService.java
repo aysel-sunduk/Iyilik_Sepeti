@@ -67,6 +67,9 @@ public class UserService {
         // Null güvenliği: Eğer veritabanında null ise 0 olarak dön
         response.setWalletBalance(user.getWalletBalance() != null ? user.getWalletBalance() : java.math.BigDecimal.ZERO);
         response.setIyilikBalance(user.getIyilikBalance() != null ? user.getIyilikBalance() : java.math.BigDecimal.ZERO);
+        response.setImpactPoints(user.getImpactPoints() != null ? user.getImpactPoints() : 0);
+        response.setTotalDonationsCount(user.getTotalDonationsCount() != null ? user.getTotalDonationsCount() : 0);
+        response.setVolunteerLevel(user.getVolunteerLevel() != null ? user.getVolunteerLevel() : "Yeni Gönüllü");
         
         response.setCreatedAt(user.getCreatedAt());
         return response;

@@ -8,6 +8,9 @@ interface User {
   role?: string;
   iyilikBalance?: number;
   walletBalance?: number;
+  impactPoints?: number;
+  totalDonationsCount?: number;
+  volunteerLevel?: string;
 }
 
 interface AuthState {

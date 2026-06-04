@@ -70,6 +70,15 @@ public class User {
     @Builder.Default
     private BigDecimal iyilikBalance = BigDecimal.ZERO;
     
+    @Builder.Default
+    private Integer impactPoints = 0;
+    
+    @Builder.Default
+    private Integer totalDonationsCount = 0;
+    
+    @Builder.Default
+    private String volunteerLevel = "Yeni Gönüllü";
+    
     // Manuel getter - OrderService'de getFullName() diye çağırdığın için
     public String getFullName() {
         if (firstName != null && lastName != null) {

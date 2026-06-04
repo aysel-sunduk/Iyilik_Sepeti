@@ -99,7 +99,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductResponse> getProductsByCategory(String category) {
         Pageable pageable = PageRequest.of(0, 50);
-        Page<Product> productPage = productRepository.findByCategoryAndIsActiveTrue(category, pageable);
+        // URL decode ve trim yaparak büyük/küçük harf uyuşmazlıklarını önle
+        String decodedCategory;
+        try {
+            decodedCategory = java.net.URLDecoder.decode(category, java.nio.charset.StandardCharsets.UTF_8).trim();
+        } catch (Exception e) {
+            decodedCategory = category.trim();
+        }
+        Page<Product> productPage = productRepository.findByCategoryIgnoreCaseAndIsActiveTrue(decodedCategory, pageable);
         return productPage.stream()
             .map(this::convertToResponse)
             .collect(Collectors.toList());

@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DonationResponse {
     private UUID id;
+    private UUID orderId;
     private UUID donorId;
     private String donorName;
     private UUID productId;

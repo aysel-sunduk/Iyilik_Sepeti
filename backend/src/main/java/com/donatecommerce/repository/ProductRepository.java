@@ -21,6 +21,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     
     // Kategoriye göre aktif ürünler (PAGE döner)
     Page<Product> findByCategoryAndIsActiveTrue(String category, Pageable pageable);
+
+    // Kategoriye göre aktif ürünler - büyük/küçük harf duyarsız
+    Page<Product> findByCategoryIgnoreCaseAndIsActiveTrue(String category, Pageable pageable);
     
     // Tüm aktif ürünler
     @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.isDeleted = false")
